@@ -13,6 +13,7 @@ def test_timing_values_positive():
     assert config.FLASH_MS > 0
     assert config.DOOR_DEBOUNCE_MS > 0
     assert config.TICK_MS > 0
+    assert config.BUSY_ASSERT_MS > 0
 
 
 def test_volume_in_module_range():

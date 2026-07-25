@@ -31,5 +31,6 @@ IR_BEAM_SEEN_VALUE = 0     # receiver pin reads this when the beam is SEEN
 BUSY_ACTIVE = 1            # BUSY pin value while a sound is playing
 DOOR_DEBOUNCE_MS = 50      # tilt switch debounce time
 IR_SETTLE_MS = 5           # emitter-on settle time before reading receiver
+BUSY_ASSERT_MS = 300       # after play(), BUSY can't be trusted this long
 LED_FALLBACK_ON_MS = 3000  # LED on-time if BUSY never asserts (module missing)
 TICK_MS = 50               # main loop tick

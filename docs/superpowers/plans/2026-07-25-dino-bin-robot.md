@@ -105,8 +105,8 @@ git commit -m "chore: scaffold project, copy DY-SV17F driver from droid"
   `FLASH_MS`, `VOLUME`, `TRACK_DOOR_VOICE`, `TRACK_BEEP`, `UART_ID`,
   `UART_TX_PIN`, `UART_RX_PIN`, `BUSY_PIN`, `TILT_PIN`, `LED_PINS` (list),
   `IR_EMIT_PIN`, `IR_RECV_PIN`, `DOOR_OPEN_VALUE`, `IR_BEAM_SEEN_VALUE`,
-  `BUSY_ACTIVE`, `DOOR_DEBOUNCE_MS`, `IR_SETTLE_MS`, `LED_FALLBACK_ON_MS`,
-  `TICK_MS`.
+  `BUSY_ACTIVE`, `DOOR_DEBOUNCE_MS`, `IR_SETTLE_MS`, `BUSY_ASSERT_MS`,
+  `LED_FALLBACK_ON_MS`, `TICK_MS`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -128,6 +128,7 @@ def test_timing_values_positive():
     assert config.FLASH_MS > 0
     assert config.DOOR_DEBOUNCE_MS > 0
     assert config.TICK_MS > 0
+    assert config.BUSY_ASSERT_MS > 0
 
 
 def test_volume_in_module_range():
@@ -186,6 +187,7 @@ IR_BEAM_SEEN_VALUE = 0     # receiver pin reads this when the beam is SEEN
 BUSY_ACTIVE = 1            # BUSY pin value while a sound is playing
 DOOR_DEBOUNCE_MS = 50      # tilt switch debounce time
 IR_SETTLE_MS = 5           # emitter-on settle time before reading receiver
+BUSY_ASSERT_MS = 300       # after play(), BUSY can't be trusted this long
 LED_FALLBACK_ON_MS = 3000  # LED on-time if BUSY never asserts (module missing)
 TICK_MS = 50               # main loop tick
 ```
@@ -274,6 +276,12 @@ def test_two_full_cycles_fire_two_events():
         d.closed_event(raw, t)
     assert d.closed_event(SHUT, 700) is False
     assert d.closed_event(SHUT, 800) is True
+
+
+def test_boot_with_door_open_fires_on_first_shut():
+    d = DoorWatch(open_value=OPEN, debounce_ms=50, initial_raw=OPEN, now_ms=0)
+    assert d.closed_event(SHUT, 100) is False   # candidate: shut
+    assert d.closed_event(SHUT, 200) is True    # stable shut -> event
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -727,14 +735,16 @@ while True:
     if burst.active():
         set_leds(burst.led_on(now))
     elif voice_started is not None:
-        if player.is_busy():
+        if time.ticks_diff(now, voice_started) < config.BUSY_ASSERT_MS:
+            set_leds(True)             # BUSY can't be trusted yet after play()
+        elif player.is_busy():
             voice_saw_busy = True
             set_leds(True)
         elif voice_saw_busy:
             set_leds(False)            # playback just finished
             voice_started = None
         elif time.ticks_diff(now, voice_started) < config.LED_FALLBACK_ON_MS:
-            set_leds(True)             # BUSY not seen (yet/ever): fixed time
+            set_leds(True)             # BUSY never asserted: fixed on-time
         else:
             set_leds(False)
             voice_started = None

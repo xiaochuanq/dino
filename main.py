@@ -84,14 +84,16 @@ while True:
     if burst.active():
         set_leds(burst.led_on(now))
     elif voice_started is not None:
-        if player.is_busy():
+        if time.ticks_diff(now, voice_started) < config.BUSY_ASSERT_MS:
+            set_leds(True)             # BUSY can't be trusted yet after play()
+        elif player.is_busy():
             voice_saw_busy = True
             set_leds(True)
         elif voice_saw_busy:
             set_leds(False)            # playback just finished
             voice_started = None
         elif time.ticks_diff(now, voice_started) < config.LED_FALLBACK_ON_MS:
-            set_leds(True)             # BUSY not seen (yet/ever): fixed time
+            set_leds(True)             # BUSY never asserted: fixed on-time
         else:
             set_leds(False)
             voice_started = None

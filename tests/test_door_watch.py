@@ -47,3 +47,9 @@ def test_two_full_cycles_fire_two_events():
         d.closed_event(raw, t)
     assert d.closed_event(SHUT, 700) is False
     assert d.closed_event(SHUT, 800) is True
+
+
+def test_boot_with_door_open_fires_on_first_shut():
+    d = DoorWatch(open_value=OPEN, debounce_ms=50, initial_raw=OPEN, now_ms=0)
+    assert d.closed_event(SHUT, 100) is False   # candidate: shut
+    assert d.closed_event(SHUT, 200) is True    # stable shut -> event
