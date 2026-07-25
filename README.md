@@ -32,6 +32,8 @@ Connect the DY-SV17F over its USB port and copy two files onto it:
 - `00001.wav` — the door voice ("thank you!")
 - `00002.wav` — the full-bin beep
 
+The door voice always wins the speaker: a new door close cuts off whatever is playing, and the full-bin beep never interrupts the voice — a skipped beep just waits for the next alert.
+
 ## Tuning (edit `config.py`)
 
 | Constant | What it does | Default |
