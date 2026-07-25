@@ -72,3 +72,34 @@ class BinWatch:
             self._next_burst = ticks_add(now_ms, self._repeat)
             return True
         return False
+
+
+class FlashBurst:
+    """One alert burst: count flashes of flash_ms on / flash_ms off.
+
+    Driven by the main loop calling led_on(now) every tick - never blocks.
+    """
+
+    def __init__(self, count, flash_ms):
+        self._count = count
+        self._flash_ms = flash_ms
+        self._start = None
+
+    def start(self, now_ms):
+        self._start = now_ms
+
+    def cancel(self):
+        self._start = None
+
+    def active(self):
+        return self._start is not None
+
+    def led_on(self, now_ms):
+        """Desired LED state now; self-deactivates when the burst is done."""
+        if self._start is None:
+            return False
+        phase = ticks_diff(now_ms, self._start) // self._flash_ms
+        if phase >= self._count * 2:
+            self._start = None
+            return False
+        return phase % 2 == 0
