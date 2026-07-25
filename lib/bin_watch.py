@@ -38,3 +38,37 @@ class DoorWatch:
         was_open = self._stable == self._open_value
         self._stable = raw
         return was_open and raw != self._open_value
+
+
+class BinWatch:
+    """Track bin fullness from IR beam checks; schedule alert bursts."""
+
+    def __init__(self, full_after_ms, alert_repeat_ms, now_ms):
+        self._full_after = full_after_ms
+        self._repeat = alert_repeat_ms
+        self._last_seen = now_ms
+        self._full = False
+        self._next_burst = None
+
+    def beam_result(self, seen, now_ms):
+        """Feed the result of one IR check."""
+        if seen:
+            self._last_seen = now_ms
+            self._full = False
+            self._next_burst = None
+        elif (not self._full and
+              ticks_diff(now_ms, self._last_seen) >= self._full_after):
+            self._full = True
+            self._next_burst = now_ms  # first burst is due right away
+
+    def is_full(self):
+        return self._full
+
+    def burst_due(self, now_ms):
+        """True at most once per repeat interval while full."""
+        if not self._full or self._next_burst is None:
+            return False
+        if ticks_diff(now_ms, self._next_burst) >= 0:
+            self._next_burst = ticks_add(now_ms, self._repeat)
+            return True
+        return False
