@@ -84,11 +84,18 @@ no asyncio.
 - While FULL, every `ALERT_REPEAT_S` seconds run one **burst**:
   - Play `TRACK_BEEP`.
   - Flash the LEDs `FLASH_COUNT` times: `FLASH_MS` on, `FLASH_MS` off each.
+- Flashes are advanced by the main loop using timestamps (non-blocking),
+  so the door keeps being polled during a burst.
 - Shared-speaker rules: the door voice has priority. A due beep never
   interrupts a playing voice — if the module is busy when a beep is due,
   that beep is skipped and the next burst tries again. In the other
   direction, a door-close event does interrupt a playing beep (see Door
   section). Door open/close works normally while FULL.
+- **LED ownership rule:** exactly one mode drives the LEDs at a time.
+  During an alert burst the flash pattern owns them (the beep's BUSY
+  signal is ignored for LEDs). When a door-close fires, any burst in
+  progress is cancelled and the LEDs switch to following BUSY for the
+  voice. When neither is active, LEDs are off.
 
 ## Architecture & files
 
@@ -136,8 +143,9 @@ Already self-contained with a CPython fallback for tests. Used as-is:
   blocks or crashes. LEDs use the `LED_FALLBACK_ON_MS` fallback when BUSY
   never asserts.
 - Tilt switch bounce: handled by `DOOR_DEBOUNCE_MS` software debounce.
-- The main loop never blocks longer than one LED flash; there are no
-  operations that can hang it (no network, no waits on external input).
+- The main loop never blocks: flash bursts and LED timing are driven by
+  timestamps, and there are no operations that can hang it (no network,
+  no waits on external input).
 
 ## Testing
 
