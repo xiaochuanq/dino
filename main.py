@@ -72,11 +72,13 @@ while True:
         if not watch.is_full():
             burst.cancel()             # bin emptied: stop any running alert
 
-    # Alert burst when due - skipped entirely if a sound is still playing.
-    if watch.burst_due(now) and not player.is_busy():
+    # Alert burst when due - skipped entirely if a sound is playing, or a
+    # door voice was just started (BUSY takes ~200 ms to assert after a
+    # play command, so a False BUSY right after play() cannot be trusted).
+    if (watch.burst_due(now) and not player.is_busy()
+            and voice_started is None):
         player.play(config.TRACK_BEEP)
         burst.start(now)
-        voice_started = None           # LEDs belong to the burst now
 
     # LEDs: burst pattern wins; else follow the door voice; else off.
     if burst.active():
