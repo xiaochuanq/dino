@@ -86,11 +86,14 @@ no asyncio.
   - Flash the LEDs `FLASH_COUNT` times: `FLASH_MS` on, `FLASH_MS` off each.
 - Flashes are advanced by the main loop using timestamps (non-blocking),
   so the door keeps being polled during a burst.
-- Shared-speaker rules: the door voice has priority. A due beep never
-  interrupts a playing voice — if the module is busy when a beep is due,
-  that beep is skipped and the next burst tries again. In the other
-  direction, a door-close event does interrupt a playing beep (see Door
-  section). Door open/close works normally while FULL.
+- Shared-speaker priority (highest first): (1) a new door-close voice
+  overrides anything already playing — a previous voice or a beep;
+  (2) the door voice is never interrupted by a beep. A due beep is skipped
+  when the module is busy playing OR when a voice was just started and the
+  BUSY pin has not asserted yet (the DY-SV17F takes ~200 ms to raise BUSY
+  after a play command — the beep gate must not trust a False BUSY during
+  that window). Beeps repeat every burst, so a skipped beep simply
+  postpones to the next one. Door open/close works normally while FULL.
 - **LED ownership rule:** exactly one mode drives the LEDs at a time.
   During an alert burst the flash pattern owns them (the beep's BUSY
   signal is ignored for LEDs). When a door-close fires, any burst in
