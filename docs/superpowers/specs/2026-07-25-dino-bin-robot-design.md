@@ -45,9 +45,10 @@ The user-facing tuning file. Every behavior parameter is a named constant:
 | j | `FLASH_MS` | Each flash: on this many ms, then off the same | 200 |
 
 Also in `config.py`: pin numbers, `VOLUME` (0–30), `TRACK_DOOR_VOICE = 1`,
-`TRACK_BEEP = 2`, `DOOR_DEBOUNCE_MS = 50`, `LED_FALLBACK_ON_MS = 3000`,
-and the input polarity constants (`DOOR_OPEN_VALUE`, `IR_BEAM_SEEN_VALUE`)
-so the code adapts to how the switch and receiver are wired.
+`TRACK_BEEP = 2`, `DOOR_DEBOUNCE_MS = 50`, `BUSY_ASSERT_MS = 300`,
+`LED_FALLBACK_ON_MS = 3000`, and the input polarity constants
+(`DOOR_OPEN_VALUE`, `IR_BEAM_SEEN_VALUE`) so the code adapts to how the
+switch and receiver are wired.
 
 ## Behavior
 
@@ -68,7 +69,10 @@ no asyncio.
   pin reports playing, then turn off. Because LEDs simply follow BUSY,
   a playback restart keeps them lit with no extra logic. If BUSY never
   asserts (module missing/miswired), LEDs fall back to
-  `LED_FALLBACK_ON_MS` on-time.
+  `LED_FALLBACK_ON_MS` on-time. LEDs are held on for the first
+  `BUSY_ASSERT_MS` after a play command, because the DY-SV17F's BUSY pin
+  cannot be trusted during its ~200 ms assertion latency (this also
+  prevents a stale BUSY reading from an interrupted previous track).
 
 ### Fullness detection (IR beam-break)
 
@@ -86,11 +90,14 @@ no asyncio.
   - Flash the LEDs `FLASH_COUNT` times: `FLASH_MS` on, `FLASH_MS` off each.
 - Flashes are advanced by the main loop using timestamps (non-blocking),
   so the door keeps being polled during a burst.
-- Shared-speaker rules: the door voice has priority. A due beep never
-  interrupts a playing voice — if the module is busy when a beep is due,
-  that beep is skipped and the next burst tries again. In the other
-  direction, a door-close event does interrupt a playing beep (see Door
-  section). Door open/close works normally while FULL.
+- Shared-speaker priority (highest first): (1) a new door-close voice
+  overrides anything already playing — a previous voice or a beep;
+  (2) the door voice is never interrupted by a beep. A due beep is skipped
+  when the module is busy playing OR when a voice was just started and the
+  BUSY pin has not asserted yet (the DY-SV17F takes ~200 ms to raise BUSY
+  after a play command — the beep gate must not trust a False BUSY during
+  that window). Beeps repeat every burst, so a skipped beep simply
+  postpones to the next one. Door open/close works normally while FULL.
 - **LED ownership rule:** exactly one mode drives the LEDs at a time.
   During an alert burst the flash pattern owns them (the beep's BUSY
   signal is ignored for LEDs). When a door-close fires, any burst in
