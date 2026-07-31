@@ -15,51 +15,39 @@ except ImportError:  # desktop CPython for tests
         return a + b
 
 
-class DoorWatch:
-    """Debounce a tilt switch and report open->shut transitions."""
-
-    def __init__(self, open_value, debounce_ms, initial_raw, now_ms):
-        self._open_value = open_value
-        self._debounce = debounce_ms
-        self._stable = initial_raw
-        self._candidate = initial_raw
-        self._since = now_ms
-
-    def closed_event(self, raw, now_ms):
-        """Feed one raw pin sample. True once per debounced open->shut."""
-        if raw != self._candidate:
-            self._candidate = raw
-            self._since = now_ms
-            return False
-        if raw == self._stable:
-            return False
-        if ticks_diff(now_ms, self._since) < self._debounce:
-            return False
-        was_open = self._stable == self._open_value
-        self._stable = raw
-        return was_open and raw != self._open_value
-
-
 class BinWatch:
-    """Track bin fullness from IR beam checks; schedule alert bursts."""
+    """Classify IR beam samples: short blocks are drop-throughs ("passes"),
+    a long continuous block means the bin is full; schedule alert bursts."""
 
-    def __init__(self, full_after_ms, alert_repeat_ms, now_ms):
+    def __init__(self, full_after_ms, alert_repeat_ms, pass_max_ms, now_ms):
         self._full_after = full_after_ms
         self._repeat = alert_repeat_ms
+        self._pass_max = pass_max_ms
         self._last_seen = now_ms
+        self._blocked_since = None
         self._full = False
         self._next_burst = None
 
     def beam_result(self, seen, now_ms):
-        """Feed the result of one IR check."""
+        """Feed one beam sample. Returns True once when a block shorter
+        than pass_max_ms clears - something passed through the beam."""
+        passed = False
         if seen:
+            if (self._blocked_since is not None and not self._full and
+                    ticks_diff(now_ms, self._blocked_since) < self._pass_max):
+                passed = True
+            self._blocked_since = None
             self._last_seen = now_ms
             self._full = False
             self._next_burst = None
-        elif (not self._full and
-              ticks_diff(now_ms, self._last_seen) >= self._full_after):
-            self._full = True
-            self._next_burst = now_ms  # first burst is due right away
+        else:
+            if self._blocked_since is None:
+                self._blocked_since = now_ms
+            if (not self._full and
+                    ticks_diff(now_ms, self._last_seen) >= self._full_after):
+                self._full = True
+                self._next_burst = now_ms  # first burst is due right away
+        return passed
 
     def is_full(self):
         return self._full

@@ -4,32 +4,29 @@ Change a number, save, redeploy (./deploy.sh) - that's how you tune the robot.
 """
 
 # --- Behavior tuning -------------------------------------------------
-IR_CHECK_INTERVAL_S = 5    # ("n") seconds between IR beam checks, 1-10
 FULL_AFTER_S = 60          # beam blocked this many seconds -> bin is FULL
+IR_PASS_MAX_MS = 2000      # block shorter than this that clears = a drop-through
 ALERT_REPEAT_S = 10        # ("m") seconds between alert bursts while FULL
 FLASH_COUNT = 3            # ("k") LED flashes per alert burst
 FLASH_MS = 200             # ("j") each flash: on this many ms, off the same
 
 # --- Sound ------------------------------------------------------------
 VOLUME = 25                # 0-30
-TRACK_DOOR_VOICE = 1       # 00001.wav on the DY-SV17F flash
+TRACK_PASS_VOICE = 1       # 00001.wav on the DY-SV17F flash
 TRACK_BEEP = 2             # 00002.wav on the DY-SV17F flash
 
 # --- Pins (GP numbers on the Pico) -------------------------------------
 UART_ID = 0
 UART_TX_PIN = 0            # Pico GP0 (UART0 TX) -> DY-SV17F RX
 UART_RX_PIN = 1            # Pico GP1 (UART0 RX) -> DY-SV17F TX
-BUSY_PIN = 2               # DY-SV17F BUSY output
-TILT_PIN = 3               # tilt switch, other leg to GND (uses pull-up)
+BUSY_PIN = 2               # DY-SV17F BUSY output (CON3 pin)
 LED_PINS = [4]             # one or more LED pins, all switched together
-IR_EMIT_PIN = 5            # IR emitter LED (through a resistor)
+IR_EMIT_PIN = 5            # IR emitter LED (through 220 ohm)
 IR_RECV_PIN = 6            # IR receiver output
 
 # --- Wiring polarity / fine timing --------------------------------------
-DOOR_OPEN_VALUE = 1        # tilt pin reads this while the door is OPEN
 IR_BEAM_SEEN_VALUE = 0     # receiver pin reads this when the beam is SEEN
 BUSY_ACTIVE = 1            # BUSY pin value while a sound is playing
-DOOR_DEBOUNCE_MS = 50      # tilt switch debounce time
 IR_SETTLE_MS = 5           # emitter-on settle time before reading receiver
 BUSY_ASSERT_MS = 300       # after play(), BUSY can't be trusted this long
 LED_FALLBACK_ON_MS = 3000  # LED on-time if BUSY never asserts (module missing)

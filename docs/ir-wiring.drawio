@@ -1,0 +1,63 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="ir-wiring" name="IR beam wiring">
+<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="700" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="title" value="IR beam wiring — examples/04_test_ir_blink.py (block the beam → onboard LED blinks)" style="text;html=1;fontSize=15;fontStyle=1;align=left;" vertex="1" parent="1">
+      <mxGeometry x="40" y="15" width="760" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="usb" value="micro-USB" style="rounded=0;html=1;fillColor=#cccccc;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="100" y="55" width="80" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="pico" value="Raspberry Pi&#10;Pico 2 / 2 W" style="rounded=1;html=1;fillColor=#2e7d46;strokeColor=#1b4d2b;fontColor=#ffffff;fontSize=14;fontStyle=1;verticalAlign=bottom;spacingBottom=16;" vertex="1" parent="1">
+      <mxGeometry x="40" y="80" width="200" height="380" as="geometry" />
+    </mxCell>
+    <mxCell id="obled" value="onboard LED&#10;(&quot;LED&quot; pin)" style="rounded=0;html=1;fillColor=#ffe599;strokeColor=#bf9000;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="105" width="90" height="34" as="geometry" />
+    </mxCell>
+    <mxCell id="p3v3" value="3V3 (pin 36)" style="rounded=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="180" y="160" width="90" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="pgp5" value="GP5 (emit)" style="rounded=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="180" y="220" width="90" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="pgp6" value="GP6 (recv)" style="rounded=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="180" y="280" width="90" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="pgnd" value="GND (pin 38)" style="rounded=0;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="180" y="340" width="90" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="r220" value="220 Ω" style="rounded=0;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="350" y="220" width="80" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="irled" value="IR emitter LED — 940 nm, 5 mm&#10;(anode / long leg to resistor)" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.opto_electronics.led_1;pointerEvents=1;strokeColor=#990000;fontColor=#990000;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="490" y="200" width="100" height="62" as="geometry" />
+    </mxCell>
+    <mxCell id="beam" value="invisible IR beam across the bin&#10;(emitter faces receiver)" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#cc0000;strokeWidth=2;endArrow=block;fontSize=11;fontColor=#cc0000;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="irled" target="pdio">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="r10k" value="10 kΩ pull-up&#10;(skip if 3-pin module)" style="rounded=0;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="340" y="300" width="100" height="36" as="geometry" />
+    </mxCell>
+    <mxCell id="pdio" value="IR receiver — phototransistor / photodiode&#10;(collector/OUT side to GP6)" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.opto_electronics.photodiode;pointerEvents=1;strokeColor=#1155cc;fontColor=#1155cc;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="490" y="370" width="100" height="66" as="geometry" />
+    </mxCell>
+    <mxCell id="gndrail" value="GND rail (any Pico GND pin)" style="rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+      <mxGeometry x="280" y="510" width="560" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="w1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="pgp5" target="r220"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="r220" target="irled"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w3" value="cathode" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0.9;entryY=0;fontSize=10;" edge="1" parent="1" source="irled" target="gndrail"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w4" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="p3v3" target="r10k"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w5" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="r10k" target="pdio"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w6" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="pgp6" target="pdio"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w7" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0.55;entryY=0;" edge="1" parent="1" source="pdio" target="gndrail"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="w8" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="pgnd" target="gndrail"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="note" value="Using a 3-pin receiver MODULE instead of a bare part?&#10;   VCC → 3V3,  GND → GND,  OUT → GP6 directly — no 10 kΩ needed.&#10;&#10;• Emitter and receiver physically face each other across the bin opening;&#10;   the dashed arrow is the light path, not a wire.&#10;• Blocked beam → onboard LED blinks at 5 Hz (run examples/04_test_ir_blink.py).&#10;• IR light is invisible — a phone camera shows the emitter as a purple glow.&#10;• Beam-seen polarity wrong? Flip IR_BEAM_SEEN_VALUE in config.py." style="rounded=0;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
+      <mxGeometry x="640" y="80" width="330" height="220" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
+  </diagram>
+</mxfile>

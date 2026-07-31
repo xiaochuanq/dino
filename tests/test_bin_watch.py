@@ -4,7 +4,8 @@ S = 1000  # ms per second
 
 
 def make(now=0):
-    return BinWatch(full_after_ms=60 * S, alert_repeat_ms=10 * S, now_ms=now)
+    return BinWatch(full_after_ms=60 * S, alert_repeat_ms=10 * S,
+                    pass_max_ms=2 * S, now_ms=now)
 
 
 def test_starts_not_full():
@@ -70,3 +71,59 @@ def test_refilling_after_clear_alerts_again():
     w.beam_result(False, 121 * S)          # blocked again for 60s
     assert w.is_full() is True
     assert w.burst_due(121 * S) is True
+
+
+# --- pass detection (something dropped through the beam) ----------------
+
+def test_short_block_then_clear_is_a_pass():
+    w = make(now=0)
+    assert w.beam_result(False, 10 * S) is False        # block starts
+    assert w.beam_result(True, 10 * S + 300) is True    # cleared fast: PASS
+
+
+def test_pass_fires_only_once_per_block():
+    w = make(now=0)
+    w.beam_result(False, 10 * S)
+    assert w.beam_result(True, 10 * S + 300) is True
+    assert w.beam_result(True, 10 * S + 400) is False   # still clear: no event
+
+
+def test_steady_beam_is_never_a_pass():
+    w = make(now=0)
+    assert w.beam_result(True, 1 * S) is False
+    assert w.beam_result(True, 2 * S) is False
+
+
+def test_block_at_pass_max_is_not_a_pass():
+    w = make(now=0)
+    w.beam_result(False, 10 * S)
+    assert w.beam_result(True, 12 * S) is False          # exactly 2s: too long
+
+
+def test_long_block_then_clear_is_not_a_pass():
+    w = make(now=0)
+    w.beam_result(False, 10 * S)                         # e.g. hand hovering
+    w.beam_result(False, 40 * S)
+    assert w.beam_result(True, 40 * S + 100) is False
+
+
+def test_full_clearing_is_not_a_pass():
+    w = make(now=0)
+    w.beam_result(False, 60 * S)                         # full
+    assert w.beam_result(True, 61 * S) is False          # emptied, no voice
+
+
+def test_multiple_samples_inside_one_block_still_one_pass():
+    w = make(now=0)
+    assert w.beam_result(False, 10 * S) is False
+    assert w.beam_result(False, 10 * S + 100) is False
+    assert w.beam_result(False, 10 * S + 200) is False
+    assert w.beam_result(True, 10 * S + 300) is True
+
+
+def test_two_drops_fire_two_passes():
+    w = make(now=0)
+    w.beam_result(False, 10 * S)
+    assert w.beam_result(True, 10 * S + 200) is True
+    w.beam_result(False, 20 * S)
+    assert w.beam_result(True, 20 * S + 200) is True

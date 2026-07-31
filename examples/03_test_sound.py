@@ -1,7 +1,7 @@
 """Wiring check 3: play both tracks; LEDs mirror the BUSY pin.
 
 Deploy first (./deploy.sh), then run:  mpremote run examples/03_test_sound.py
-You should hear the door voice then the beep, with LEDs lit during each.
+You should hear the pass voice then the beep, with LEDs lit during each.
 No sound: check UART wiring, CON1/2/3 straps, and that 00001/00002 files
 are on the module's flash. LEDs never light: check BUSY_PIN / BUSY_ACTIVE.
 """
@@ -19,7 +19,7 @@ leds = [Pin(n, Pin.OUT, value=0) for n in config.LED_PINS]
 player = DYSV17F(uart, busy_pin=busy, busy_active=config.BUSY_ACTIVE)
 player.set_volume(config.VOLUME)
 
-for track, name in ((config.TRACK_DOOR_VOICE, "door voice"),
+for track, name in ((config.TRACK_PASS_VOICE, "pass voice"),
                     (config.TRACK_BEEP, "beep")):
     print("playing track %d (%s)..." % (track, name))
     player.play(track)
