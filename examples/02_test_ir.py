@@ -9,15 +9,16 @@ import time
 from machine import Pin
 
 import config
+from ir_beam import IRBeam
 
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=0)
-ir_recv = Pin(config.IR_RECV_PIN, Pin.IN)
+ir_recv = Pin(config.IR_RECV_PIN, Pin.IN, pull=Pin.PULL_UP)
+ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
+                 config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
+                 config.IR_SAMPLE_GAP_US)
 
 print("beam check once per second (Ctrl-C to stop)")
 while True:
-    ir_emit.value(1)
-    time.sleep_ms(config.IR_SETTLE_MS)
-    seen = ir_recv.value() == config.IR_BEAM_SEEN_VALUE
-    ir_emit.value(0)
+    seen = ir_beam.seen()
     print("beam SEEN" if seen else "beam BLOCKED")
     time.sleep(1)

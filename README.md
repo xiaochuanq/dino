@@ -19,7 +19,7 @@ Design spec: `docs/superpowers/specs/2026-07-25-dino-bin-robot-design.md`
 | GP2 | DY-SV17F CON3 (doubles as BUSY output in UART mode) |
 | GP4 | LED (+ resistor → GND). Add more pins to `LED_PINS` for more LEDs |
 | GP5 | IR emitter LED (+ 220 Ω resistor) |
-| GP6 | IR receiver output |
+| GP6 | Phototransistor/simple break-beam receiver output |
 | VBUS (5 V) / GND | DY-SV17F power (UART is 3.3 V-safe) |
 | 3V3 / GND | Sensor power |
 

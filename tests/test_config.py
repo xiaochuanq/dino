@@ -9,6 +9,9 @@ def test_timing_values_positive():
     assert config.IR_PASS_MAX_MS > 0
     assert config.TICK_MS > 0
     assert config.BUSY_ASSERT_MS > 0
+    assert config.IR_SAMPLE_COUNT > 0
+    assert config.IR_SAMPLE_COUNT % 2 == 1
+    assert config.IR_SAMPLE_GAP_US >= 0
 
 
 def test_pass_window_shorter_than_full_threshold():

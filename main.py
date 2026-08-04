@@ -14,6 +14,7 @@ from machine import Pin, UART
 import config
 from dysv17f import DYSV17F
 from bin_watch import BinWatch, FlashBurst
+from ir_beam import IRBeam
 
 # --- hardware setup ---------------------------------------------------
 uart = UART(config.UART_ID, baudrate=9600,
@@ -21,7 +22,10 @@ uart = UART(config.UART_ID, baudrate=9600,
 busy = Pin(config.BUSY_PIN, Pin.IN)
 leds = [Pin(n, Pin.OUT, value=0) for n in config.LED_PINS]
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=0)
-ir_recv = Pin(config.IR_RECV_PIN, Pin.IN)
+ir_recv = Pin(config.IR_RECV_PIN, Pin.IN, pull=Pin.PULL_UP)
+ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
+                 config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
+                 config.IR_SAMPLE_GAP_US)
 
 player = DYSV17F(uart, busy_pin=busy, busy_active=config.BUSY_ACTIVE)
 player.set_volume(config.VOLUME)
@@ -33,12 +37,8 @@ def set_leds(on):
 
 
 def beam_seen():
-    """Pulse the IR emitter and sample the receiver once."""
-    ir_emit.value(1)
-    time.sleep_ms(config.IR_SETTLE_MS)
-    seen = ir_recv.value() == config.IR_BEAM_SEEN_VALUE
-    ir_emit.value(0)
-    return seen
+    """Pulse the IR emitter and return a noise-filtered beam sample."""
+    return ir_beam.seen()
 
 
 # --- state ------------------------------------------------------------

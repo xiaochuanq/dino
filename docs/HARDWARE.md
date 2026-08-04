@@ -16,7 +16,7 @@ project updates it (last synced 2026-07-30).
 | 4–8 Ω speaker | Sound output | DY-SV17F SPK+/SPK− terminals |
 | LED(s) | Lit while voice plays; flash during full-bin alert | GPIO (one pin per LED, all switched together) |
 | IR emitter LED | One side of the beam across the bin opening | GPIO (through 220 Ω) |
-| IR receiver | Reads the beam — a short block = something dropped in (voice); blocked ≥ 60 s = bin FULL (alert) | GPIO input |
+| IR receiver | Bare phototransistor/photodiode break-beam sensor; a short block = something dropped in (voice); blocked ≥ 60 s = bin FULL (alert) | GPIO input |
 
 ## Pico pin assignments
 
@@ -26,8 +26,13 @@ project updates it (last synced 2026-07-30).
 | GP1 | `UART_RX_PIN` | UART0 RX ← DY-SV17F TX |
 | GP2 | `BUSY_PIN` | DY-SV17F BUSY input (high while playing, `BUSY_ACTIVE = 1`) |
 | GP4 | `LED_PINS` | LED output (add more GP numbers to the list for more LEDs) |
-| GP5 | `IR_EMIT_PIN` | IR emitter output (pulsed 5 ms per 50 ms tick) |
+| GP5 | `IR_EMIT_PIN` | IR emitter output (briefly pulsed for each receiver sample) |
 | GP6 | `IR_RECV_PIN` | IR receiver input (`IR_BEAM_SEEN_VALUE = 0`) |
+
+The IR blink test uses the external LED on the first pin in `LED_PINS` (GP4
+by default). It deliberately does not use `Pin("LED")`: on Pico W / Pico 2 W
+the onboard LED is reached through CYW43, and a CYW43 I/O timeout would stop
+the sensor test.
 
 ## Connection table
 
@@ -41,8 +46,27 @@ project updates it (last synced 2026-07-30).
 | — | DY-SV17F SPK+/SPK− → speaker | 4–8 Ω, driven by the module's own amp |
 | GP4 | LED anode | Series resistor → cathode → GND |
 | GP5 | IR emitter LED anode | **220 Ω** series resistor → cathode → GND (Vf ≈ 1.3 V → ~9 mA; never below 150 Ω, never resistor-less) |
-| GP6 | IR receiver OUT | Module: VCC → 3V3 (not 5 V), OUT → GP6 direct. Bare phototransistor: collector → GP6 + **10 kΩ pull-up to 3V3**, emitter → GND (code enables no internal pull-up) |
+| GP6 | IR receiver OUT | Bare phototransistor: collector → GP6, emitter → GND. The code enables GP6's internal pull-up; an external **10 kΩ pull-up to 3V3** gives a stronger, more predictable signal. A simple comparator break-beam module may use VCC → 3V3, GND → GND, OUT → GP6. |
 | 3V3 / GND | Sensor power | IR receiver parts |
+
+### IR part compatibility and emitter drive
+
+This project uses a plain optical break beam: a 940 nm emitter faces a bare
+phototransistor/photodiode or simple comparator module. The program briefly
+turns the emitter on, samples the detector, and turns it off; no carrier or IR
+remote-control protocol is involved.
+
+The direct GP5 circuit supplies only about 9 mA and is intended for short
+distances. For a wider bin, use a 940 nm emitter through an NPN low-side
+driver: `3V3 -> LED series resistor -> LED anode`, LED cathode to collector,
+emitter to GND, and GP5 through 1 kΩ to base. Add a 10 kΩ base-to-GND resistor.
+Keep Pico and driver grounds common. Size the resistor conservatively and
+never omit it. GP5 high must turn the transistor and LED on.
+
+A faint deep-red dot from some 850 nm emitters is normal. A 940 nm emitter is
+usually invisible to the eye (check it with a phone camera). A bright red LED
+is likely the wrong part or is being overdriven; switch power off and verify
+its part number, polarity, and series resistor.
 
 ### DY-SV17F setup
 
