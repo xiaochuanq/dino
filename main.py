@@ -6,20 +6,38 @@ The IR beam does double duty (no tilt switch):
   - blocked FULL_AFTER_S        -> FULL: beep + LED flashes every
     ALERT_REPEAT_S until the beam is seen again.
 
-The PIR motion sensor greets people: a new motion event calls
-on_motion_detected() (plays sound 1), and the eye LEDs stay lit for as
-long as motion is seen.
+The VL53L1X laser distance sensor greets people: when someone comes
+within GREET_NEAR_MM, on_motion_detected() plays sound 1, and the eye
+LEDs stay lit for as long as they remain in range. They must step away
+(beyond the filtered zone) before the dino greets again.
 
 All tuning knobs are in config.py.
+
+WIRING (pin numbers mirror config.py; part notes in docs/HARDWARE.md)
+    DY-SV17F   VCC -> VBUS (pin 40, 5 V), GND -> GND,
+               RX -> GP0 (UART0 TX), TX -> GP1 (UART0 RX),
+               CON3 -> GP2 (becomes BUSY; strap 4.7 k to 3.3 V),
+               CON1 + CON2 -> GND direct (no resistor),
+               SPK+/SPK- -> 4-8 ohm speaker
+    LED        GP4 --[series resistor]--> anode, cathode -> GND
+    IR beam    emitter: GP5 --[220 ohm]--> anode, cathode -> GND
+               receiver: collector -> GP6 (internal pull-up),
+               emitter leg -> GND
+    Eyes       GP7 -> two LEDs in parallel, EACH through its own
+               resistor -> GND
+    VL53L1X    VIN -> 3V3 (pin 36), GND -> GND,
+               SDA -> GP16, SCL -> GP17 (I2C0; common breakouts
+               carry their own I2C pull-ups)
 """
 import time
-from machine import Pin, UART
+from machine import Pin, UART, I2C
 
 import config
 from dysv17f import DYSV17F
 from bin_watch import BinWatch, FlashBurst
 from ir_beam import IRBeam
-from droid_motion import Pir
+from droid_sense import Ranger, ZoneFilter, DeadSensor, set_mode, FAR
+from vl53l1x import VL53L1X
 
 # --- hardware setup ---------------------------------------------------
 uart = UART(config.UART_ID, baudrate=9600,
@@ -32,7 +50,15 @@ ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
                  config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
                  config.IR_SAMPLE_GAP_US)
 eyes = Pin(config.EYES_PIN, Pin.OUT, value=0)   # both eye LEDs on one GPIO
-pir = Pir(pin=config.PIR_PIN, warmup_s=config.PIR_WARMUP_S)
+
+try:
+    laser = VL53L1X(I2C(config.I2C_ID, sda=Pin(config.I2C_SDA_PIN),
+                        scl=Pin(config.I2C_SCL_PIN)))
+    set_mode(laser, config.LASER_MODE)
+except OSError:
+    laser = DeadSensor()   # no sensor: greeting off, the bin still works
+ranger = Ranger(laser, ZoneFilter(near_mm=config.GREET_NEAR_MM,
+                                  close_mm=config.GREET_CLOSE_MM))
 
 player = DYSV17F(uart, busy_pin=busy, busy_active=config.BUSY_ACTIVE)
 player.set_volume(config.VOLUME)
@@ -44,7 +70,7 @@ def set_leds(on):
 
 
 def on_motion_detected():
-    """A human was spotted by the PIR: play sound 1."""
+    """A person came within greeting range: play sound 1."""
     player.play(config.TRACK_MOTION_VOICE)
 
 
@@ -62,6 +88,7 @@ burst = FlashBurst(config.FLASH_COUNT, config.FLASH_MS)
 
 voice_started = None   # ticks when the pass voice started; None = not playing
 voice_saw_busy = False
+person_was_present = False   # previous tick's "someone within GREET_NEAR_MM"
 
 # --- main loop ----------------------------------------------------------
 while True:
@@ -79,16 +106,20 @@ while True:
     if not watch.is_full():
         burst.cancel()                 # bin emptied: stop any running alert
 
-    # New motion event -> greet, unless a sound is already playing (a
-    # drop-through voice or the full-bin beep keeps priority).
-    if (pir.motion_started() and voice_started is None
+    # Someone crossed into greeting range -> greet, unless a sound is
+    # already playing (a drop-through voice or the full-bin beep keeps
+    # priority). The zone is median-filtered, so no flicker greetings.
+    person_present = ranger.zone() != FAR
+    if (person_present and not person_was_present
+            and voice_started is None
             and not player.is_busy() and not burst.active()):
         on_motion_detected()
         voice_started = now            # reuse the voice/LED tracking below
         voice_saw_busy = False
+    person_was_present = person_present
 
-    # Eyes stay lit while motion is seen (always off during PIR warm-up).
-    eyes.value(1 if pir.motion() else 0)
+    # Eyes stay lit while someone is within range.
+    eyes.value(1 if person_present else 0)
 
     # Alert burst when due - skipped entirely if a sound is playing, or a
     # pass voice was just started (BUSY takes ~200 ms to assert after a

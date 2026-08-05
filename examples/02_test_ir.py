@@ -4,6 +4,12 @@ Deploy first (./deploy.sh), then run:  mpremote run examples/02_test_ir.py
 With a clear bin you should see 'beam SEEN'; put your hand in the beam and
 it should flip to 'beam BLOCKED'. If it reads inverted, flip
 IR_BEAM_SEEN_VALUE in config.py.
+
+WIRING (matches config.py / docs/HARDWARE.md)
+    IR emitter LED:  GP5 --[220 ohm]--> anode, cathode -> GND
+    IR receiver:     collector -> GP6 (internal pull-up), emitter -> GND
+    (comparator break-beam module instead: VCC -> 3V3, GND -> GND,
+     OUT -> GP6)
 """
 import time
 from machine import Pin

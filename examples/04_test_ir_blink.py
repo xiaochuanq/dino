@@ -8,6 +8,13 @@ If it behaves inverted, flip IR_BEAM_SEEN_VALUE in config.py.
 This intentionally avoids Pin("LED"). On a Pico W/2 W the onboard LED is
 controlled through CYW43, so a CYW43 timeout can stop an otherwise valid IR
 test and leave the failure looking like an IR problem.
+
+WIRING (matches config.py / docs/HARDWARE.md)
+    IR emitter LED:  GP5 --[220 ohm]--> anode, cathode -> GND
+    IR receiver:     collector -> GP6 (internal pull-up), emitter -> GND
+    (comparator break-beam module instead: VCC -> 3V3, GND -> GND,
+     OUT -> GP6)
+    LED:             GP4 --[series resistor]--> anode, cathode -> GND
 """
 import time
 from machine import Pin
