@@ -6,6 +6,10 @@ The IR beam does double duty (no tilt switch):
   - blocked FULL_AFTER_S        -> FULL: beep + LED flashes every
     ALERT_REPEAT_S until the beam is seen again.
 
+The PIR motion sensor greets people: a new motion event calls
+on_motion_detected() (plays sound 1), and the eye LEDs stay lit for as
+long as motion is seen.
+
 All tuning knobs are in config.py.
 """
 import time
@@ -15,6 +19,7 @@ import config
 from dysv17f import DYSV17F
 from bin_watch import BinWatch, FlashBurst
 from ir_beam import IRBeam
+from droid_motion import Pir
 
 # --- hardware setup ---------------------------------------------------
 uart = UART(config.UART_ID, baudrate=9600,
@@ -26,6 +31,8 @@ ir_recv = Pin(config.IR_RECV_PIN, Pin.IN, pull=Pin.PULL_UP)
 ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
                  config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
                  config.IR_SAMPLE_GAP_US)
+eyes = Pin(config.EYES_PIN, Pin.OUT, value=0)   # both eye LEDs on one GPIO
+pir = Pir(pin=config.PIR_PIN, warmup_s=config.PIR_WARMUP_S)
 
 player = DYSV17F(uart, busy_pin=busy, busy_active=config.BUSY_ACTIVE)
 player.set_volume(config.VOLUME)
@@ -34,6 +41,11 @@ player.set_volume(config.VOLUME)
 def set_leds(on):
     for led in leds:
         led.value(1 if on else 0)
+
+
+def on_motion_detected():
+    """A human was spotted by the PIR: play sound 1."""
+    player.play(config.TRACK_MOTION_VOICE)
 
 
 def beam_seen():
@@ -66,6 +78,17 @@ while True:
         voice_saw_busy = False
     if not watch.is_full():
         burst.cancel()                 # bin emptied: stop any running alert
+
+    # New motion event -> greet, unless a sound is already playing (a
+    # drop-through voice or the full-bin beep keeps priority).
+    if (pir.motion_started() and voice_started is None
+            and not player.is_busy() and not burst.active()):
+        on_motion_detected()
+        voice_started = now            # reuse the voice/LED tracking below
+        voice_saw_busy = False
+
+    # Eyes stay lit while motion is seen (always off during PIR warm-up).
+    eyes.value(1 if pir.motion() else 0)
 
     # Alert burst when due - skipped entirely if a sound is playing, or a
     # pass voice was just started (BUSY takes ~200 ms to assert after a

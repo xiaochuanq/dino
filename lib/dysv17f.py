@@ -15,13 +15,30 @@ WIRING (defaults used by the examples)
              connect straight to the Pico, no level shifter needed
     GND   -> GND
     RX    -> Pico GP0 (UART0 TX)      TX -> Pico GP1 (UART0 RX)
-    BUSY  -> Pico GP2 (any free GPIO; lets wait_done() work)
+    BUSY  -> Pico GP2 (any free GPIO; lets wait_done() work). No pin is
+             labeled BUSY: the CON3 strap pin BECOMES the busy output
+             after boot - GP2 goes on CON3 (see mode select below).
     SPK+/SPK- -> a 4-8 ohm speaker (this module has its own amp)
-    Mode select: solder/strap CON1=0, CON2=0, CON3=1 for UART control
-    (some boards ship with resistor pads instead of pins - check yours).
+    Mode select for UART control (CON1=0, CON2=0, CON3=1 - sampled only
+    in the first ~30 ms after MODULE power-on):
+      CON1 -> GND direct,  CON2 -> GND direct,
+      CON3 -> 3.3 V through 4.7 kohm (two 10 k in parallel = 5 k is
+      fine). Not a direct tie - CON3 must stay free to be driven as
+      BUSY after boot; not 10 k or more - the divider against the
+      chip's internal pull can land under the 2.7 V "high" threshold.
+    After changing straps, unplug the module's power completely - a
+    soft reboot does not re-strap it.
 
 ELECTRICAL NOTES
-    - No pull-ups/pull-downs needed: UART idles high on its own and the
+    - No series resistors on CON1/CON2: against the chip's internal
+      pull-up they form a divider in the undefined logic band and the
+      mode bits misread at power-on.
+    - Missed-strap signature: the module boots into IO-trigger mode,
+      where RX/IO1 (the pin wired to Pico TX) is the hardware "play
+      track 2" button - ANY serial traffic then plays track 2, whatever
+      track number the code asked for. Only ever hearing the 2nd file
+      means the straps, not the files, are wrong.
+    - The UART lines themselves need no pull-ups (idle high) and the
       BUSY output is push-pull.
     - The amp draws current spikes at high volume: if the sound crackles
       or the Pico browns out, add a 220-470 uF electrolytic capacitor
