@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rewrite Dino around four kid-named robot parts (`visitor`, `door`, `voice`, `eyes`) and a SENSE → DECIDE → ACT main loop with `on_<human_event>()` handlers kids edit.
+**Goal:** Rewrite Dino around four kid-named robot parts (`visitor`, `lid`, `voice`, `eyes`) and a SENSE → DECIDE → ACT main loop with `on_<human_event>()` handlers kids edit.
 
 **Architecture:** Each part is one small file in `lib/`: a pure-logic class (desktop pytest-able, fed `now_ms` + raw values — the existing `bin_watch.py` pattern) plus a thin wrapper owning its device. `main.py` shrinks to a hardware-assembly block, five `on_*` handlers, and a three-step loop. Spec: `docs/superpowers/specs/2026-08-06-kid-friendly-parts-design.md`.
 
@@ -10,11 +10,11 @@
 
 ## Global Constraints
 
-- Kid-facing names are concepts, never devices: `visitor`/`door`/`voice`/`eyes`; event handlers are `on_<human_event>()` (e.g. `on_donation`, never `on_beam_blocked`).
+- Kid-facing names are concepts, never devices: `visitor`/`lid`/`voice`/`eyes`; event handlers are `on_<human_event>()` (e.g. `on_donation`, never `on_beam_blocked`).
 - `machine` imports appear ONLY in `main.py`'s hardware section. Every `lib/` logic class must import cleanly on desktop CPython (use the `try: from time import ticks_diff ... except ImportError:` shim, as in `lib/bin_watch.py`).
 - Sound priority: greeting/goodbye/appreciation are *important* (interrupt); passing noise and complaints are *polite* (skipped if talking).
 - Distances: `HERE_MM = 1000`, `LEAVE_MM = 1500`, `PASSING_MM = 3000`. Pins: UART 0/1, BUSY 2, eyes 4, IR emit 5, IR receive 6/7/8, I2C1 on 14/15.
-- Tests live in `tests/`, import lib modules flat (`from door import DoorLogic`) via the existing `tests/conftest.py`. Run with `python3 -m pytest tests/ -v`.
+- Tests live in `tests/`, import lib modules flat (`from lid import LidLogic`) via the existing `tests/conftest.py`. Run with `python3 -m pytest tests/ -v`.
 - Do not modify `lib/dysv17f.py`, `lib/ir_beam.py`, `lib/vl53l1x.py`, `lib/droid_sense.py`, or `examples/`.
 - Commit after every green task; end commit messages with `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 
@@ -28,7 +28,7 @@
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces (names every later task uses): `PASSING_TRACKS`, `GREETING_TRACKS`, `GOODBYE_TRACKS`, `THANKS_TRACKS`, `FULL_TRACKS` (lists of int ≥ 1); `VOLUME`; `HERE_MM`, `LEAVE_MM`, `PASSING_MM`, `LASER_MODE`; `PASSING_COOLDOWN_S`, `DOOR_PUSH_MAX_MS`, `FULL_AFTER_S`, `COMPLAIN_EVERY_S`, `TALK_BLINK_MS`; `UART_ID`, `UART_TX_PIN`, `UART_RX_PIN`, `BUSY_PIN`, `EYES_PIN`, `IR_EMIT_PIN`, `IR_RECV_PINS` (list), `I2C_ID`, `I2C_SDA_PIN`, `I2C_SCL_PIN`; `IR_BEAM_SEEN_VALUE`, `BUSY_ACTIVE`, `IR_SETTLE_MS`, `IR_SAMPLE_COUNT`, `IR_SAMPLE_GAP_US`, `BUSY_ASSERT_MS`, `TALK_FALLBACK_MS`, `TICK_MS`.
+- Produces (names every later task uses): `PASSING_TRACKS`, `GREETING_TRACKS`, `GOODBYE_TRACKS`, `THANKS_TRACKS`, `FULL_TRACKS` (lists of int ≥ 1); `VOLUME`; `HERE_MM`, `LEAVE_MM`, `PASSING_MM`, `LASER_MODE`; `PASSING_COOLDOWN_S`, `LID_PUSH_MAX_MS`, `FULL_AFTER_S`, `COMPLAIN_EVERY_S`, `TALK_BLINK_MS`; `UART_ID`, `UART_TX_PIN`, `UART_RX_PIN`, `BUSY_PIN`, `EYES_PIN`, `IR_EMIT_PIN`, `IR_RECV_PINS` (list), `I2C_ID`, `I2C_SDA_PIN`, `I2C_SCL_PIN`; `IR_BEAM_SEEN_VALUE`, `BUSY_ACTIVE`, `IR_SETTLE_MS`, `IR_SAMPLE_COUNT`, `IR_SAMPLE_GAP_US`, `BUSY_ASSERT_MS`, `TALK_FALLBACK_MS`, `TICK_MS`.
 - Removed (later tasks must not reference): `PIR_PIN`, `LED_PINS`, `IR_RECV1/2/3_PIN`, `TRACK_PASS_VOICE`, `TRACK_BEEP`, `TRACK_MOTION_VOICE`, `GREET_NEAR_MM`, `GREET_CLOSE_MM`, `FLASH_COUNT`, `FLASH_MS`, `ALERT_REPEAT_S`, `IR_PASS_MAX_MS`, `LED_FALLBACK_ON_MS`.
 
 - [ ] **Step 1: Rewrite the test file**
@@ -54,11 +54,11 @@ def test_distances_are_ordered():
 
 
 def test_push_window_shorter_than_full_threshold():
-    assert config.DOOR_PUSH_MAX_MS < config.FULL_AFTER_S * 1000
+    assert config.LID_PUSH_MAX_MS < config.FULL_AFTER_S * 1000
 
 
 def test_push_window_spans_several_ticks():
-    assert config.DOOR_PUSH_MAX_MS >= 2 * config.TICK_MS
+    assert config.LID_PUSH_MAX_MS >= 2 * config.TICK_MS
 
 
 def test_timing_values_positive():
@@ -111,7 +111,7 @@ Change a number, save, redeploy (./deploy.sh) - that's how you tune the robot.
 PASSING_TRACKS = [3]       # funny noise when someone walks by (1-3 m)
 GREETING_TRACKS = [1]      # "hello!" when someone comes close
 GOODBYE_TRACKS = [4]       # "bye!" when they walk away
-THANKS_TRACKS = [5]        # "thank you!" when they push the door
+THANKS_TRACKS = [5]        # "thank you!" when they push the lid
 FULL_TRACKS = [2]          # complaints while the bin is stuffed full
 VOLUME = 30                # 0-30
 
@@ -126,8 +126,8 @@ LASER_MODE = "medium"      # "short" ~1.3 m / "medium" ~2.9 m / "long" ~3.6 m
 
 # --- Behavior timing ------------------------------------------------------
 PASSING_COOLDOWN_S = 30    # quiet time between two passing noises
-DOOR_PUSH_MAX_MS = 2000    # door open shorter than this, then shut = a push
-FULL_AFTER_S = 60          # door open this many seconds -> bin is FULL
+LID_PUSH_MAX_MS = 2000     # lid open shorter than this, then shut = a push
+FULL_AFTER_S = 60          # lid open this many seconds -> bin is FULL
 COMPLAIN_EVERY_S = 10      # seconds between complaints while FULL
 TALK_BLINK_MS = 250        # eye blink speed while Dino is talking
 
@@ -170,28 +170,28 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 2: lib/door.py — DoorLogic + Door
+### Task 2: lib/lid.py — LidLogic + Lid
 
 **Files:**
-- Create: `lib/door.py`
-- Test: `tests/test_door.py`
+- Create: `lib/lid.py`
+- Test: `tests/test_lid.py`
 
 **Interfaces:**
 - Consumes: `IRBeam.seen() -> bool` from `lib/ir_beam.py` (wrapper only).
-- Produces: `DoorLogic(push_max_ms, full_after_ms, complain_every_ms, now_ms)` with `update(beam_seen, now_ms)`, one-tick flag `just_pushed`, properties `is_open`, `is_full`, method `complain_due(now_ms) -> bool`. `Door(beam, push_max_ms, full_after_ms, complain_every_ms, now_ms)` — same surface but `update(now_ms)` samples the beam itself. Task 6 builds `Door(...)` and reads `door.just_pushed`, `door.complain_due(now)`.
+- Produces: `LidLogic(push_max_ms, full_after_ms, complain_every_ms, now_ms)` with `update(beam_seen, now_ms)`, one-tick flag `just_pushed`, properties `is_open`, `is_full`, method `complain_due(now_ms) -> bool`. `Lid(beam, push_max_ms, full_after_ms, complain_every_ms, now_ms)` — same surface but `update(now_ms)` samples the beam itself. Task 6 builds `Lid(...)` and reads `lid.just_pushed`, `lid.complain_due(now)`.
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/test_door.py`:
+Create `tests/test_lid.py`:
 
 ```python
-from door import DoorLogic
+from lid import LidLogic
 
 S = 1000  # ms per second
 
 
 def make(now=0):
-    return DoorLogic(push_max_ms=2 * S, full_after_ms=60 * S,
+    return LidLogic(push_max_ms=2 * S, full_after_ms=60 * S,
                      complain_every_ms=10 * S, now_ms=now)
 
 
@@ -204,9 +204,9 @@ def test_starts_closed_and_not_full():
 
 def test_blocked_beam_means_open():
     d = make()
-    d.update(False, 1 * S)          # beam blocked = door pushed open
+    d.update(False, 1 * S)          # beam blocked = lid pushed open
     assert d.is_open is True
-    d.update(True, 2 * S)           # beam seen = door closed
+    d.update(True, 2 * S)           # beam seen = lid closed
     assert d.is_open is False
 
 
@@ -262,7 +262,7 @@ def test_closing_clears_full_immediately():
     assert d.is_full is False
 
 
-def test_closing_a_full_door_is_not_a_push():
+def test_closing_a_full_lid_is_not_a_push():
     d = make()
     d.update(False, 60 * S)         # full now
     d.update(True, 61 * S)          # emptied/cleared - not a donation push
@@ -292,8 +292,8 @@ def test_closing_stops_complaints():
     assert d.complain_due(70 * S) is False
 
 
-def test_door_wrapper_samples_its_own_beam():
-    from door import Door
+def test_lid_wrapper_samples_its_own_beam():
+    from lid import Lid
 
     class FakeBeam:
         def __init__(self):
@@ -303,7 +303,7 @@ def test_door_wrapper_samples_its_own_beam():
             return self.value
 
     beam = FakeBeam()
-    d = Door(beam, push_max_ms=2 * S, full_after_ms=60 * S,
+    d = Lid(beam, push_max_ms=2 * S, full_after_ms=60 * S,
              complain_every_ms=10 * S, now_ms=0)
     beam.value = False
     d.update(1 * S)
@@ -315,22 +315,22 @@ def test_door_wrapper_samples_its_own_beam():
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `python3 -m pytest tests/test_door.py -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'door'`
+Run: `python3 -m pytest tests/test_lid.py -v`
+Expected: FAIL with `ModuleNotFoundError: No module named 'lid'`
 
-- [ ] **Step 3: Write lib/door.py**
+- [ ] **Step 3: Write lib/lid.py**
 
 ```python
-"""door - Dino's flappy door, watched by an invisible IR light beam.
+"""lid - Dino's flappy lid, watched by an invisible IR light beam.
 
-The beam shines across the door opening: door pushed open = beam blocked,
-door closed = beam seen. DoorLogic is pure logic (desktop-testable, fed
-times in ms); Door adds the real beam doing the looking.
+The beam shines across the lid opening: lid pushed open = beam blocked,
+lid closed = beam seen. LidLogic is pure logic (desktop-testable, fed
+times in ms); Lid adds the real beam doing the looking.
 
 States and news after every update():
-    is_open      the door is pushed open right now
+    is_open      the lid is pushed open right now
     just_pushed  (one tick) it was open briefly and closed - a donation!
-    is_full      the door has been stuck open so long the bin must be full
+    is_full      the lid has been stuck open so long the bin must be full
     complain_due(now)  True once per complain interval while full
 """
 try:
@@ -344,7 +344,7 @@ except ImportError:  # desktop CPython for tests
         return a + b
 
 
-class DoorLogic:
+class LidLogic:
     def __init__(self, push_max_ms, full_after_ms, complain_every_ms, now_ms):
         self._push_max = push_max_ms
         self._full_after = full_after_ms
@@ -364,7 +364,7 @@ class DoorLogic:
         return self._full
 
     def update(self, beam_seen, now_ms):
-        """Feed one beam sample (beam seen = door closed)."""
+        """Feed one beam sample (beam seen = lid closed)."""
         self.just_pushed = False
         if beam_seen:
             if (self._opened_at is not None and not self._full and
@@ -392,8 +392,8 @@ class DoorLogic:
         return False
 
 
-class Door(DoorLogic):
-    """DoorLogic plus the real IR beam: update(now) samples it for you."""
+class Lid(LidLogic):
+    """LidLogic plus the real IR beam: update(now) samples it for you."""
 
     def __init__(self, beam, push_max_ms, full_after_ms, complain_every_ms,
                  now_ms):
@@ -402,19 +402,19 @@ class Door(DoorLogic):
         self._beam = beam
 
     def update(self, now_ms):
-        DoorLogic.update(self, self._beam.seen(), now_ms)
+        LidLogic.update(self, self._beam.seen(), now_ms)
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `python3 -m pytest tests/test_door.py -v`
+Run: `python3 -m pytest tests/test_lid.py -v`
 Expected: PASS (all 14)
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/door.py tests/test_door.py
-git commit -m "feat: door part - open/pushed/full from the IR beam, kid-facing names
+git add lib/lid.py tests/test_lid.py
+git commit -m "feat: lid part - open/pushed/full from the IR beam, kid-facing names
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
@@ -1021,7 +1021,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Delete: `lib/bin_watch.py`, `tests/test_bin_watch.py`, `tests/test_flash_burst.py`, `config_REMOTE_1092.py`
 
 **Interfaces:**
-- Consumes everything Tasks 1–5 produced: `Door(beam, push_max_ms, full_after_ms, complain_every_ms, now_ms)`, `Visitor(sensor, here_mm, leave_mm, passing_mm, cooldown_ms)`, `Voice(player, busy_assert_ms, fallback_ms)`, `Eyes(pin, blink_ms)`; plus unchanged `DYSV17F`, `IRBeam`, `VL53L1X`, `DeadSensor`, `set_mode`.
+- Consumes everything Tasks 1–5 produced: `Lid(beam, push_max_ms, full_after_ms, complain_every_ms, now_ms)`, `Visitor(sensor, here_mm, leave_mm, passing_mm, cooldown_ms)`, `Voice(player, busy_assert_ms, fallback_ms)`, `Eyes(pin, blink_ms)`; plus unchanged `DYSV17F`, `IRBeam`, `VL53L1X`, `DeadSensor`, `set_mode`.
 - Produces: the program kids read. No later task consumes it.
 
 - [ ] **Step 1: Rewrite main.py**
@@ -1039,7 +1039,7 @@ HOW DINO THINKS - the loop at the bottom, three steps every tick:
 DINO'S BODY PARTS (built in the hardware section - the only place
 device names appear):
   visitor - a laser tape-measure: is someone away / passing / here?
-  door    - an IR light beam across the flap: open? pushed? stuck-open full?
+  lid    - an IR light beam across the flap: open? pushed? stuck-open full?
   voice   - a sound board: speaks random lines, knows if it's talking
   eyes    - two LEDs: steady glow, lively blink while talking
 
@@ -1063,7 +1063,7 @@ from ir_beam import IRBeam
 from vl53l1x import VL53L1X
 from droid_sense import DeadSensor, set_mode
 from visitor import Visitor
-from door import Door
+from lid import Lid
 from voice import Voice
 from eyes import Eyes
 
@@ -1081,7 +1081,7 @@ beam = IRBeam(Pin(config.IR_EMIT_PIN, Pin.OUT, value=0),
               [Pin(n, Pin.IN, pull=Pin.PULL_UP) for n in config.IR_RECV_PINS],
               config.IR_BEAM_SEEN_VALUE, config.IR_SETTLE_MS,
               config.IR_SAMPLE_COUNT, config.IR_SAMPLE_GAP_US)
-door = Door(beam, config.DOOR_PUSH_MAX_MS, config.FULL_AFTER_S * 1000,
+lid = Lid(beam, config.LID_PUSH_MAX_MS, config.FULL_AFTER_S * 1000,
             config.COMPLAIN_EVERY_S * 1000, now)
 
 try:
@@ -1089,7 +1089,7 @@ try:
                         scl=Pin(config.I2C_SCL_PIN)))
     set_mode(laser, config.LASER_MODE)
 except OSError:
-    laser = DeadSensor()   # no laser: door still works, greetings off
+    laser = DeadSensor()   # no laser: lid still works, greetings off
 visitor = Visitor(laser, config.HERE_MM, config.LEAVE_MM,
                   config.PASSING_MM, config.PASSING_COOLDOWN_S * 1000)
 
@@ -1113,12 +1113,12 @@ def on_visitor_leaves():
 
 
 def on_donation():
-    """They pushed the door - thank them!"""
+    """They pushed the lid - thank them!"""
     voice.say_one_of(config.THANKS_TRACKS, important=True)
 
 
 def on_bin_full():
-    """The door is stuck open - Dino is stuffed. Complain!"""
+    """The lid is stuck open - Dino is stuffed. Complain!"""
     voice.say_one_of(config.FULL_TRACKS)
 
 
@@ -1128,11 +1128,11 @@ while True:
 
     # 1. SENSE - every part looks at the world
     visitor.update(now)
-    door.update(now)
+    lid.update(now)
     voice.update(now)
 
     # 2. DECIDE - turn states into human events
-    if door.just_pushed and visitor.where == "here":
+    if lid.just_pushed and visitor.where == "here":
         on_donation()              # a donation beats a greeting
     elif visitor.just_arrived:
         on_visitor_arrives()
@@ -1140,7 +1140,7 @@ while True:
         on_visitor_leaves()
     if visitor.just_passed:
         on_visitor_passing()
-    if door.complain_due(now):
+    if lid.complain_due(now):
         on_bin_full()
 
     # 3. SHOW - the eyes follow the mood
@@ -1163,7 +1163,7 @@ Expected: no output. (`examples/` is exempt — it exercises raw hardware.)
 - [ ] **Step 4: Run the whole desktop suite**
 
 Run: `python3 -m pytest tests/ -v`
-Expected: PASS — test_config, test_door, test_visitor, test_voice, test_eyes, test_dysv17f all green; the two deleted test files gone from collection.
+Expected: PASS — test_config, test_lid, test_visitor, test_voice, test_eyes, test_dysv17f all green; the two deleted test files gone from collection.
 
 - [ ] **Step 5: Compile-check main.py for syntax (it can't run on desktop — `machine` is Pico-only)**
 
@@ -1202,8 +1202,8 @@ Dino watches with a laser tape-measure and an invisible IR light beam:
 - Someone walks by (1.5–3 m) → a random funny noise (then a cooldown).
 - Someone comes close (< 1 m) → a random greeting, once per visit.
 - They walk away (> 1.5 m) → a random goodbye.
-- They push the door flap while standing close → a random thank-you.
-- The door is stuck open 60 s → the bin is FULL → complaints every 10 s
+- They push the lid flap while standing close → a random thank-you.
+- The lid is stuck open 60 s → the bin is FULL → complaints every 10 s
   until it closes.
 - Eyes glow steadily, and blink while Dino talks.
 
@@ -1211,7 +1211,7 @@ Design spec: `docs/superpowers/specs/2026-08-06-kid-friendly-parts-design.md`
 
 ## How the code thinks (read `main.py`!)
 
-Dino has four body parts — `visitor`, `door`, `voice`, `eyes` — and one
+Dino has four body parts — `visitor`, `lid`, `voice`, `eyes` — and one
 loop with three steps every tick:
 
 1. **SENSE** — each part looks at the world and updates its state.
@@ -1245,7 +1245,7 @@ Connect the DY-SV17F over USB and copy WAV files named `00001.wav`,
 |---|---|
 | `GREETING_TRACKS` | someone comes close |
 | `GOODBYE_TRACKS` | they walk away |
-| `THANKS_TRACKS` | they push the door |
+| `THANKS_TRACKS` | they push the lid |
 | `PASSING_TRACKS` | someone walks by |
 | `FULL_TRACKS` | the bin is stuffed full |
 
@@ -1263,8 +1263,8 @@ interrupt whatever is playing. Passing noises and complaints are
 | `LEAVE_MM` | farther than this = they left (hysteresis gap) | 1500 |
 | `PASSING_MM` | outer edge of the walking-by band | 3000 |
 | `PASSING_COOLDOWN_S` | quiet time between passing noises | 30 |
-| `DOOR_PUSH_MAX_MS` | door open shorter than this = a push | 2000 |
-| `FULL_AFTER_S` | door open this long = FULL | 60 |
+| `LID_PUSH_MAX_MS` | lid open shorter than this = a push | 2000 |
+| `FULL_AFTER_S` | lid open this long = FULL | 60 |
 | `COMPLAIN_EVERY_S` | seconds between complaints while FULL | 10 |
 | `TALK_BLINK_MS` | eye blink speed while talking | 250 |
 | `VOLUME` | loudness 0–30 | 30 |
@@ -1318,9 +1318,9 @@ Walk-test checklist (from the spec's Verification section):
 - Walk by 1.5–3 m away → one noise, then silence for 30 s even if you keep pacing.
 - Walk up close (< 1 m) → greeting; hover around the 1 m line → no re-greet.
 - Step back past 1.5 m → goodbye, and the next approach greets again.
-- Stand close and push the door flap briefly → thank-you. Push it with nobody close → silence.
-- Hold the door open 60 s → complaint immediately, then every 10 s; let it close → complaints stop.
+- Stand close and push the lid flap briefly → thank-you. Push it with nobody close → silence.
+- Hold the lid open 60 s → complaint immediately, then every 10 s; let it close → complaints stop.
 - Eyes: steady glow when quiet, blinking during every sound.
-- Unplug the laser, reboot → door behaviors still work, greetings silently off.
+- Unplug the laser, reboot → lid behaviors still work, greetings silently off.
 
 Report any hardware-test failures back rather than marking this step done.
