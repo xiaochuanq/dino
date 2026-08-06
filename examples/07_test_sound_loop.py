@@ -1,43 +1,61 @@
-"""Dino smart bin robot - every tuning knob lives here.
+import time
+from machine import Pin, UART
 
-Change a number, save, redeploy (./deploy.sh) - that's how you tune the robot.
-"""
+import config
+from dysv17f import DYSV17F
 
-# --- Behavior tuning -------------------------------------------------
-FULL_AFTER_S = 60          # beam blocked this many seconds -> bin is FULL
-IR_PASS_MAX_MS = 2000      # block shorter than this that clears = a drop-through
-ALERT_REPEAT_S = 10        # ("m") seconds between alert bursts while FULL
-FLASH_COUNT = 3            # ("k") LED flashes per alert burst
-FLASH_MS = 200             # ("j") each flash: on this many ms, off the same
+uart = UART(
+    config.UART_ID,
+    baudrate=9600,
+    tx=Pin(config.UART_TX_PIN),
+    rx=Pin(config.UART_RX_PIN),
+)
 
-# --- Sound ------------------------------------------------------------
-VOLUME = 30                # 0-30
-TRACK_PASS_VOICE = 1       # 00001.wav on the DY-SV17F flash
-TRACK_BEEP = 2             # 00002.wav on the DY-SV17F flash
-TRACK_MOTION_VOICE = 1     # played by on_motion_detected() (sound 1)
+busy = Pin(config.BUSY_PIN, Pin.IN)
 
-# --- Motion sensor (HC-SR501 PIR) ---------------------------------------
-PIR_WARMUP_S = 60          # sensor settle time after power-on; ignored until then
+# BUSY is active-low on the DY-SV17F.
+player = DYSV17F(uart, busy_pin=busy, busy_active=0)
 
-# --- Pins (GP numbers on the Pico) -------------------------------------
-UART_ID = 0
-UART_TX_PIN = 0            # Pico GP0 (UART0 TX) -> DY-SV17F RX
-UART_RX_PIN = 1            # Pico GP1 (UART0 RX) -> DY-SV17F TX
-BUSY_PIN = 2               # DY-SV17F BUSY output (CON3 pin)
-PIR_PIN = 3                # HC-SR501 PIR OUT (motion sensor)
-LED_PINS = [4]             # one or more LED pins, all switched together
-IR_EMIT_PIN = 5            # IR emitter LED (through 220 ohm)
-IR_RECV1_PIN = 6            # IR receiver output
-IR_RECV2_PIN = 7
-IR_RECV3_PIN = 8
-EYES_PIN = 9               # both eye LEDs, driven together by this one GPIO
+player.set_volume(config.VOLUME)
+time.sleep_ms(100)
 
-# --- Wiring polarity / fine timing --------------------------------------
-IR_BEAM_SEEN_VALUE = 0     # receiver pin reads this when the beam is SEEN
-BUSY_ACTIVE = 1            # BUSY pin value while a sound is playing
-IR_SETTLE_MS = 1           # emitter-on settle time before reading receiver
-IR_SAMPLE_COUNT = 5        # majority vote over this many receiver reads (odd)
-IR_SAMPLE_GAP_US = 200     # gap between the receiver reads
-BUSY_ASSERT_MS = 300       # after play(), BUSY can't be trusted this long
-LED_FALLBACK_ON_MS = 3000  # LED on-time if BUSY never asserts (module missing)
-TICK_MS = 50               # main loop tick
+# Files 1 through 9.
+for track in range(1, 10):
+    print("\nSelecting stored track", track)
+
+    # Ensure the previous track cannot block the new selection.
+    player.stop()
+    time.sleep_ms(100)
+
+    player.play(track)
+
+    # BUSY can take a while to become low.
+    started = False
+    deadline = time.ticks_add(time.ticks_ms(), 2000)
+
+    while time.ticks_diff(deadline, time.ticks_ms()) > 0:
+        if busy.value() == 0:
+            started = True
+            break
+        time.sleep_ms(20)
+
+    if not started:
+        print("Track", track, "did not assert BUSY")
+    else:
+        print("Track", track, "started")
+
+        # Wait for completion, with a 30-second safety timeout.
+        deadline = time.ticks_add(time.ticks_ms(), 30000)
+
+        while busy.value() == 0:
+            if time.ticks_diff(deadline, time.ticks_ms()) <= 0:
+                print("Playback timeout")
+                player.stop()
+                break
+            time.sleep_ms(50)
+
+        print("Track", track, "finished")
+
+    time.sleep(1)
+
+print("\nSound test complete")
