@@ -87,10 +87,10 @@ print("and UNPLUG MODULE POWER before retrying. Silence here is correct.")
 if count is not None:
     print()
     print("=== C: BUSY polarity (playing beep, track %d) ==="
-          % config.TRACK_BEEP)
+          % config.FULL_TRACKS[0])
     idle = busy.value()
     print("BUSY at idle: %d" % idle)
-    player.play(config.TRACK_BEEP)
+    player.play(config.FULL_TRACKS[0])
     time.sleep_ms(500)                        # let playback start
     playing = busy.value()
     print("BUSY while playing: %d" % playing)

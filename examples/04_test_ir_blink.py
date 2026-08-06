@@ -23,11 +23,11 @@ import config
 from ir_beam import IRBeam
 
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=0)
-ir_recv = Pin(config.IR_RECV_PIN, Pin.IN, pull=Pin.PULL_UP)
+ir_recv = Pin(config.IR_RECV_PINS[0], Pin.IN, pull=Pin.PULL_UP)
 ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
                  config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
                  config.IR_SAMPLE_GAP_US)
-led = Pin(config.LED_PINS[0], Pin.OUT, value=0)  # external LED + resistor
+led = Pin(config.EYES_PIN, Pin.OUT, value=0)  # eye LEDs (in parallel), one GPIO
 
 CHECK_MS = 100   # beam sample period; LED toggles once per sample -> 5 Hz blink
 
@@ -38,7 +38,7 @@ def beam_seen():
 
 
 print("blocking the beam blinks the GP%d LED (Ctrl-C to stop)"
-      % config.LED_PINS[0])
+      % config.EYES_PIN)
 was_seen = None
 try:
     while True:

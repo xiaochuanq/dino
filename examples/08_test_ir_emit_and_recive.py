@@ -17,7 +17,7 @@ from machine import Pin
 import config
 
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=0)
-ir_recv = Pin(config.IR_RECV_PIN, Pin.IN)
+ir_recv = Pin(config.IR_RECV_PINS[0], Pin.IN)
 led = Pin("LED", Pin.OUT, value=0)  # onboard LED (Pico 2 and 2 W)
 
 CHECK_MS = 50   # beam sample period; LED toggles once per sample -> 5 Hz blink
@@ -26,7 +26,7 @@ CHECK_MS = 50   # beam sample period; LED toggles once per sample -> 5 Hz blink
 def beam_seen():
     """Pulse the emitter and read the receiver once."""
     ir_emit.value(1)
-    time.sleep_us(config.IR_SETTLE_US)
+    time.sleep_ms(config.IR_SETTLE_MS)
     seen = ir_recv.value() == config.IR_BEAM_SEEN_VALUE
     ir_emit.value(0)
     return seen

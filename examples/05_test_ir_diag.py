@@ -22,10 +22,10 @@ from machine import Pin
 import config
 
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=1)   # ON continuously
-ir_recv = Pin(config.IR_RECV_PIN, Pin.IN)
+ir_recv = Pin(config.IR_RECV_PINS[0], Pin.IN)
 
 print("emitter GP%d held ON, reading receiver GP%d raw value"
-      % (config.IR_EMIT_PIN, config.IR_RECV_PIN))
+      % (config.IR_EMIT_PIN, config.IR_RECV_PINS[0]))
 print("(config expects %d = beam seen)" % config.IR_BEAM_SEEN_VALUE)
 last = None
 try:

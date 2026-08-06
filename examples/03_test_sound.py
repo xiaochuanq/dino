@@ -22,13 +22,13 @@ from dysv17f import DYSV17F
 uart = UART(config.UART_ID, baudrate=9600,
             tx=Pin(config.UART_TX_PIN), rx=Pin(config.UART_RX_PIN))
 busy = Pin(config.BUSY_PIN, Pin.IN)
-leds = [Pin(n, Pin.OUT, value=0) for n in config.LED_PINS]
+leds = [Pin(n, Pin.OUT, value=0) for n in [config.EYES_PIN]]
 
 player = DYSV17F(uart, busy_pin=busy, busy_active=config.BUSY_ACTIVE)
 player.set_volume(config.VOLUME)
 
-for track, name in ((config.TRACK_PASS_VOICE, "pass voice"),
-                    (config.TRACK_BEEP, "beep")):
+for track, name in ((config.THANKS_TRACKS[0], "pass voice"),
+                    (config.FULL_TRACKS[0], "beep")):
     print("playing track %d (%s)..." % (track, name))
     player.play(track)
     time.sleep_ms(300)                 # give BUSY time to assert
