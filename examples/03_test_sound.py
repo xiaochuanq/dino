@@ -4,6 +4,14 @@ Deploy first (./deploy.sh), then run:  mpremote run examples/03_test_sound.py
 You should hear the pass voice then the beep, with LEDs lit during each.
 No sound: check UART wiring, CON1/2/3 straps, and that 00001/00002 files
 are on the module's flash. LEDs never light: check BUSY_PIN / BUSY_ACTIVE.
+
+WIRING (matches config.py / docs/HARDWARE.md)
+    DY-SV17F:  VCC -> VBUS (pin 40, 5 V), GND -> GND,
+               RX -> GP0 (UART0 TX), TX -> GP1 (UART0 RX),
+               CON3 -> GP2 (becomes BUSY; strap 4.7 k to 3.3 V),
+               CON1 + CON2 -> GND direct (no resistor),
+               SPK+/SPK- -> 4-8 ohm speaker
+    LED:             GP4 --[series resistor]--> anode, cathode -> GND
 """
 import time
 from machine import Pin, UART

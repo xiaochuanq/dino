@@ -3,10 +3,10 @@
 Devices, pin assignments, and wiring for the smart bin robot. Pin numbers
 are the single source of truth in `config.py`; this file mirrors them.
 
-Drivers `lib/dysv17f.py` and `lib/droid_motion.py` are imported from the
-[pico-droid](../../pico-droid) project — re-copy them from there when that
-project updates them (last synced 2026-08-04). `lib/ir_beam.py` is authored
-here and copied the other way, into pico-droid.
+Drivers `lib/dysv17f.py`, `lib/droid_sense.py` and `lib/vl53l1x.py` are
+imported from the [pico-droid](../../pico-droid) project — re-copy them from
+there when that project updates them (last synced 2026-08-04).
+`lib/ir_beam.py` is authored here and copied the other way, into pico-droid.
 
 ## Devices
 
@@ -18,8 +18,8 @@ here and copied the other way, into pico-droid.
 | LED(s) | Lit while voice plays; flash during full-bin alert | GPIO (one pin per LED, all switched together) |
 | IR emitter LED | One side of the beam across the bin opening | GPIO (through 220 Ω) |
 | IR receiver | Bare phototransistor/photodiode break-beam sensor; a short block = something dropped in (voice); blocked ≥ 60 s = bin FULL (alert) | GPIO input |
-| HC-SR501 PIR | Wide-angle human-motion sensor; a new motion event plays sound 1 (`on_motion_detected`) | GPIO input |
-| 2× eye LEDs | The dino's eyes; lit while motion is seen | One shared GPIO |
+| VL53L1X laser distance sensor | Time-of-flight ranging up to ~4 m; someone within `GREET_NEAR_MM` (1 m) plays sound 1 (`on_motion_detected`) | I2C0 |
+| 2× eye LEDs | The dino's eyes; lit while someone is within greeting range | One shared GPIO |
 
 ## Pico pin assignments
 
@@ -28,11 +28,13 @@ here and copied the other way, into pico-droid.
 | GP0 | `UART_TX_PIN` | UART0 TX → DY-SV17F RX |
 | GP1 | `UART_RX_PIN` | UART0 RX ← DY-SV17F TX |
 | GP2 | `BUSY_PIN` | DY-SV17F BUSY input (high while playing, `BUSY_ACTIVE = 1`) |
-| GP3 | `PIR_PIN` | HC-SR501 PIR OUT input (no internal pull) |
 | GP4 | `LED_PINS` | LED output (add more GP numbers to the list for more LEDs) |
 | GP5 | `IR_EMIT_PIN` | IR emitter output (briefly pulsed for each receiver sample) |
 | GP6 | `IR_RECV_PIN` | IR receiver input (`IR_BEAM_SEEN_VALUE = 0`) |
 | GP7 | `EYES_PIN` | Both eye LEDs, switched together by this one pin |
+| GP8–GP9 | — | Reserved for future LEDs grouped with GP4/GP5 |
+| GP16 | `I2C_SDA_PIN` | I2C0 SDA → VL53L1X SDA |
+| GP17 | `I2C_SCL_PIN` | I2C0 SCL → VL53L1X SCL |
 
 The IR blink test uses the external LED on the first pin in `LED_PINS` (GP4
 by default). It deliberately does not use `Pin("LED")`: on Pico W / Pico 2 W
@@ -52,7 +54,7 @@ the sensor test.
 | GP4 | LED anode | Series resistor → cathode → GND |
 | GP5 | IR emitter LED anode | **220 Ω** series resistor → cathode → GND (Vf ≈ 1.3 V → ~9 mA; never below 150 Ω, never resistor-less) |
 | GP6 | IR receiver OUT | Bare phototransistor: collector → GP6, emitter → GND. The code enables GP6's internal pull-up; an external **10 kΩ pull-up to 3V3** gives a stronger, more predictable signal. A simple comparator break-beam module may use VCC → 3V3, GND → GND, OUT → GP6. |
-| GP3 | HC-SR501 OUT | Push-pull 3.3 V output from the module — no pulls, no series resistor. VCC → VBUS (5 V), GND → GND. Jumper on H (repeat trigger), time-delay pot fully counter-clockwise (~3 s). Needs ~60 s warm-up after power-on; keep it away from the Pico W antenna and speaker wires. |
+| GP16 / GP17 | VL53L1X SDA / SCL | VIN → 3V3 (pin 36), GND → GND. Every common breakout (Pololu, Adafruit, GY-53) has ~10 kΩ I2C pull-ups on board — add nothing. For a bare module or a bus over ~20 cm, add 4.7–10 kΩ from SDA→3V3 and SCL→3V3. Sensor fails at boot → greeting is disabled, bin features keep working. |
 | GP7 | Eye LED anodes (×2) | Two LEDs in parallel, **each with its own series resistor** (e.g. 220 Ω) → cathodes → GND. Two standard LEDs ≈ 2×10 mA is at the edge of one GPIO's comfort; use ≥ 330 Ω resistors or an NPN driver if you want them bright. |
 | 3V3 / GND | Sensor power | IR receiver parts |
 

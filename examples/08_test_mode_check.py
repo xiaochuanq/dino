@@ -21,6 +21,13 @@ Three phases:
 
 Straps are sampled at POWER-ON only: after changing them, unplug the
 module's power completely - a soft reboot is not enough.
+
+WIRING (matches config.py / docs/HARDWARE.md)
+    DY-SV17F:  VCC -> VBUS (pin 40, 5 V), GND -> GND,
+               RX -> GP0 (UART0 TX), TX -> GP1 (UART0 RX),
+               CON3 -> GP2 (becomes BUSY; strap 4.7 k to 3.3 V),
+               CON1 + CON2 -> GND direct (no resistor),
+               SPK+/SPK- -> 4-8 ohm speaker
 """
 import time
 from machine import Pin, UART
