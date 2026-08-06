@@ -3,48 +3,50 @@
 Change a number, save, redeploy (./deploy.sh) - that's how you tune the robot.
 """
 
-# --- Behavior tuning -------------------------------------------------
-FULL_AFTER_S = 60          # beam blocked this many seconds -> bin is FULL
-IR_PASS_MAX_MS = 2000      # block shorter than this that clears = a drop-through
-ALERT_REPEAT_S = 10        # ("m") seconds between alert bursts while FULL
-FLASH_COUNT = 3            # ("k") LED flashes per alert burst
-FLASH_MS = 200             # ("j") each flash: on this many ms, off the same
-
-# --- Sound ------------------------------------------------------------
+# --- Sounds: track numbers = file names on the DY-SV17F flash -----------
+# 00003.wav on the module is track 3. Add a file, add its number to a list,
+# and Dino picks one of the list at random every time.
+PASSING_TRACKS = [3]       # funny noise when someone walks by (1-3 m)
+GREETING_TRACKS = [1]      # "hello!" when someone comes close
+GOODBYE_TRACKS = [4]       # "bye!" when they walk away
+THANKS_TRACKS = [5]        # "thank you!" when they push the lid
+FULL_TRACKS = [2]          # complaints while the bin is stuffed full
 VOLUME = 30                # 0-30
-TRACK_PASS_VOICE = 1       # 00001.wav on the DY-SV17F flash
-TRACK_BEEP = 2             # 00002.wav on the DY-SV17F flash
-TRACK_MOTION_VOICE = 1     # played by on_motion_detected() (sound 1)
 
-# --- Person detection (VL53L1X laser distance sensor) -------------------
-GREET_NEAR_MM = 1000       # someone closer than this -> greet (play sound 1)
-GREET_CLOSE_MM = 500       # inner "right at the bin" zone (must be < GREET_NEAR_MM)
+# --- Distances (millimetres) ---------------------------------------------
+HERE_MM = 1000             # closer than this -> visitor "is here": greet
+LEAVE_MM = 1500            # farther than this -> visitor left: goodbye
+                           # (the 500 mm gap stops greet/goodbye ping-pong)
+PASSING_MM = 3000          # between LEAVE_MM and this -> just passing by
 LASER_MODE = "medium"      # "short" ~1.3 m / "medium" ~2.9 m / "long" ~3.6 m
+                           # (medium tops out ~2.9 m, so the passing band
+                           # really ends at sensor range)
 
-# --- Pins (GP numbers on the Pico) -------------------------------------
+# --- Behavior timing ------------------------------------------------------
+PASSING_COOLDOWN_S = 30    # quiet time between two passing noises
+LID_PUSH_MAX_MS = 2000     # lid open shorter than this, then shut = a push
+FULL_AFTER_S = 60          # lid open this many seconds -> bin is FULL
+COMPLAIN_EVERY_S = 10      # seconds between complaints while FULL
+TALK_BLINK_MS = 250        # eye blink speed while Dino is talking
+
+# --- Pins (GP numbers on the Pico) ----------------------------------------
 UART_ID = 0
-UART_TX_PIN = 0            # Pico GP0 (UART0 TX) -> DY-SV17F RX
-UART_RX_PIN = 1            # Pico GP1 (UART0 RX) -> DY-SV17F TX
+UART_TX_PIN = 0            # GP0 (UART0 TX) -> DY-SV17F RX
+UART_RX_PIN = 1            # GP1 (UART0 RX) -> DY-SV17F TX
 BUSY_PIN = 2               # DY-SV17F BUSY output (CON3 pin)
-
-PIR_PIN = 3                # HC-SR501 PIR OUT (motion sensor)
-#LED_PINS = [4]             # one or more LED pins, all switched together
+EYES_PIN = 4               # both eye LEDs (in parallel), one GPIO
 IR_EMIT_PIN = 5            # IR emitter LED (through 220 ohm)
-IR_RECV1_PIN = 6            # IR receiver output
-IR_RECV2_PIN = 7
-IR_RECV3_PIN = 8
-EYES_PIN = 4               # both eye LEDs, driven together by this one GPIO
+IR_RECV_PINS = [6, 7, 8]   # IR receiver outputs
+I2C_ID = 1                 # GP14/15 belong to I2C1 on the Pico
+I2C_SDA_PIN = 14           # VL53L1X SDA
+I2C_SCL_PIN = 15           # VL53L1X SCL
 
-I2C_ID = 0                 # I2C bus for the VL53L1X laser distance sensor
-I2C_SDA_PIN = 16           # VL53L1X SDA
-I2C_SCL_PIN = 17           # VL53L1X SCL
-
-# --- Wiring polarity / fine timing --------------------------------------
+# --- Wiring polarity / fine timing -----------------------------------------
 IR_BEAM_SEEN_VALUE = 0     # receiver pin reads this when the beam is SEEN
 BUSY_ACTIVE = 1            # BUSY pin value while a sound is playing
 IR_SETTLE_MS = 1           # emitter-on settle time before reading receiver
 IR_SAMPLE_COUNT = 5        # majority vote over this many receiver reads (odd)
 IR_SAMPLE_GAP_US = 200     # gap between the receiver reads
 BUSY_ASSERT_MS = 300       # after play(), BUSY can't be trusted this long
-LED_FALLBACK_ON_MS = 3000  # LED on-time if BUSY never asserts (module missing)
+TALK_FALLBACK_MS = 3000    # assumed talk time if BUSY never asserts
 TICK_MS = 50               # main loop tick
