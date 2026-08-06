@@ -25,10 +25,12 @@ from droid_motion import Pir
 uart = UART(config.UART_ID, baudrate=9600,
             tx=Pin(config.UART_TX_PIN), rx=Pin(config.UART_RX_PIN))
 busy = Pin(config.BUSY_PIN, Pin.IN)
-leds = [Pin(n, Pin.OUT, value=0) for n in config.LED_PINS]
+#leds = [Pin(n, Pin.OUT, value=0) for n in config.LED_PINS]
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=0)
-ir_recv = Pin(config.IR_RECV_PIN, Pin.IN, pull=Pin.PULL_UP)
-ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
+ir_recv1 = Pin(config.IR_RECV1_PIN, Pin.IN, pull=Pin.PULL_UP)
+ir_recv2 = Pin(config.IR_RECV2_PIN, Pin.IN, pull=Pin.PULL_UP)
+ir_recv3 = Pin(config.IR_RECV3_PIN, Pin.IN, pull=Pin.PULL_UP)
+ir_beam = IRBeam(ir_emit, [ir_recv1, ir_recv2, ir_recv3], config.IR_BEAM_SEEN_VALUE,
                  config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
                  config.IR_SAMPLE_GAP_US)
 eyes = Pin(config.EYES_PIN, Pin.OUT, value=0)   # both eye LEDs on one GPIO
@@ -66,7 +68,17 @@ voice_saw_busy = False
 # --- main loop ----------------------------------------------------------
 while True:
     now = time.ticks_ms()
+    
+    # Update state
+    motion_started = pir.motion_started()
+    
+    
+    # Make decisions
 
+
+    # Do actions
+    
+    
     # Sample the beam every tick: a short block that clears is a
     # drop-through -> interrupt whatever is playing, start the voice.
     if watch.beam_result(beam_seen(), now):
@@ -119,3 +131,5 @@ while True:
         set_leds(False)
 
     time.sleep_ms(config.TICK_MS)
+
+
