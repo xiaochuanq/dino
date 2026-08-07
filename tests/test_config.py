@@ -3,8 +3,9 @@ import config
 
 def test_track_lists_nonempty():
     for tracks in (config.PASSING_TRACKS, config.GREETING_TRACKS,
-                   config.GOODBYE_TRACKS, config.THANKS_TRACKS,
-                   config.FULL_TRACKS):
+                   config.ASK_HELP_TRACKS, config.POST_EATING_TRACKS,
+                   config.THANKS_TRACKS, config.GOODBYE_TRACKS,
+                   config.CHOKE_TRACKS):
         assert isinstance(tracks, list)
         assert len(tracks) >= 1
         assert all(isinstance(t, int) and t >= 1 for t in tracks)
