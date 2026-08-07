@@ -64,7 +64,7 @@ def test_default_pin_is_gp10():
 - [ ] **Step 4: Run the tests**
 
 Run: `python3 -m pytest tests/test_droid_motion.py -v`
-Expected: PASS (13 tests). Then `python3 -m pytest tests/ -q` → 69 passed.
+Expected: PASS (12 tests). Then `python3 -m pytest tests/ -q` → 68 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -456,7 +456,7 @@ Nothing else changes — SENSE / DECIDE / ACT stay identical.
 - [ ] **Step 2: Verify**
 
 Run: `python3 -m py_compile main.py && echo OK` → `OK`
-Run: `python3 -m pytest tests/ -q` → 73 passed
+Run: `python3 -m pytest tests/ -q` → 72 passed
 Run: `grep -n "GP3\|PIR_PIN = 3" main.py config.py lib/droid_motion.py` → empty
 
 - [ ] **Step 3: Commit**
@@ -568,7 +568,7 @@ GP10 | HC-SR501 OUT | Push-pull 3.3 V output from the module - no pulls, no seri
 
 - [ ] **Step 4: Verify and commit**
 
-Run: `python3 -m pytest tests/ -q` → 73 passed (docs don't affect tests; this is the final green check).
+Run: `python3 -m pytest tests/ -q` → 72 passed (docs don't affect tests; this is the final green check).
 
 ```bash
 git add examples/10_test_motion.py README.md docs/HARDWARE.md
@@ -581,6 +581,6 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ## Verification (after all tasks)
 
-1. `python3 -m pytest tests/ -q` → 73 passed.
+1. `python3 -m pytest tests/ -q` → 72 passed.
 2. `grep -rn "GP3\|pin=3\b" lib/droid_motion.py main.py config.py` → empty.
 3. On hardware: `./deploy.sh`, wait out the 60 s warm-up, then: stand still in front of the bin holding a box at ~2 m — after ~17 s the passing noises stop; walk by → noise; approach → greeting; place a bag at 0.5 m and step away → at most one greeting, then silence until the bag is removed; lid behaviors work during warm-up.
