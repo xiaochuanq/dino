@@ -8,7 +8,7 @@ class IRBeam:
         if sample_count < 1 or sample_count % 2 == 0:
             raise ValueError("sample_count must be a positive odd number")
         self._emitter = emitter
-        if len(receiver) > 1:
+        if isinstance(receiver, (list, tuple)):
             self._receivers = receiver
         else:
             self._receivers = [receiver]
