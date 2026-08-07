@@ -1,4 +1,4 @@
-from voice import VoiceLogic, Voice
+from voice import VoiceLogic, Voice, ticks_ms
 
 
 def make():
@@ -91,4 +91,40 @@ def test_update_follows_the_player_busy_wire():
     p = FakePlayer()
     v = make_voice(p)
     v.update(0)
+    assert v.is_talking is False
+
+
+def test_then_say_plays_after_the_current_line():
+    p = FakePlayer()
+    v = Voice(p, busy_assert_ms=0, fallback_ms=0, pick=min)
+    v.say_one_of([7])
+    v.then_say_one_of([9])
+    assert p.played == [7]          # follow-up waits its turn
+    p.busy = True                   # module is playing track 7
+    v.update(ticks_ms())
+    assert p.played == [7]          # still track 7's turn
+    p.busy = False                  # track 7 finished
+    v.update(ticks_ms())
+    assert p.played == [7, 9]       # follow-up takes the mic
+    assert v.is_talking is True
+
+
+def test_then_say_speaks_now_when_quiet():
+    p = FakePlayer()
+    v = Voice(p, busy_assert_ms=0, fallback_ms=0, pick=min)
+    v.then_say_one_of([9])
+    assert p.played == [9]          # nobody talking: your turn is now
+
+
+def test_interruption_forgets_the_waiting_line():
+    p = FakePlayer()
+    v = Voice(p, busy_assert_ms=0, fallback_ms=0, pick=min)
+    v.say_one_of([7])
+    v.then_say_one_of([9])
+    v.say_one_of([5], important=True)   # a new event interrupts
+    p.busy = True
+    v.update(ticks_ms())
+    p.busy = False
+    v.update(ticks_ms())
+    assert p.played == [7, 5]           # 9 belonged to the old event: gone
     assert v.is_talking is False

@@ -7,10 +7,14 @@ takes ~300 ms to wake up after play(), so right after a play we trust the
 clock instead. If BUSY never wakes (board unplugged) a fallback timer
 stops "talking" from sticking forever.
 
-Voice adds the real board and Dino's one manners rule:
+Voice adds the real board and Dino's manners:
     say_one_of(tracks)                 polite - waits its turn (skipped
                                        if Dino is already talking)
     say_one_of(tracks, important=True) interrupts whatever is playing
+    then_say_one_of(tracks)            speaks AFTER the current line
+                                       finishes (right away if quiet) -
+                                       chain two lines without the
+                                       second cutting off the first
 """
 import random
 
@@ -68,6 +72,7 @@ class Voice:
         self._player = player
         self._logic = VoiceLogic(busy_assert_ms, fallback_ms)
         self._pick = pick or random.choice
+        self._queued = None              # one follow-up line, at most
 
     @property
     def is_talking(self):
@@ -75,6 +80,10 @@ class Voice:
 
     def update(self, now_ms):
         self._logic.update(self._player.is_busy(), now_ms)
+        if not self.is_talking and self._queued is not None:
+            tracks, self._queued = self._queued, None
+            self._player.play(self._pick(tracks))
+            self._logic.started(now_ms)
 
     def say_one_of(self, tracks, important=False):
         """Speak a random track from the list. Returns True if it played."""
@@ -83,6 +92,15 @@ class Voice:
                 return False             # polite: wait for the next chance
             self._player.stop()
             sleep_ms(20)                 # brief gap between UART commands
+        self._queued = None              # a fresh line forgets any follow-up
         self._player.play(self._pick(tracks))
         self._logic.started(ticks_ms())
+        return True
+
+    def then_say_one_of(self, tracks):
+        """Speak a random track AFTER the current line finishes (right
+        away if nobody is talking). A newer say_one_of replaces it."""
+        if not self.is_talking:
+            return self.say_one_of(tracks)
+        self._queued = tracks
         return True

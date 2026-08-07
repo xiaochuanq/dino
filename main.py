@@ -79,7 +79,7 @@ def on_visitor_passing():
 def on_visitor_arrives():
     print("Someone comes close - say hello!")
     voice.say_one_of(config.GREETING_TRACKS, important=True)
-    voice.say_one_of(config.ASK_HELP_TRACKS, important=True)
+    voice.then_say_one_of(config.ASK_HELP_TRACKS)   # after the hello ends
 
 def on_visitor_leaves():
     print("They walk away - say goodbye!")
@@ -89,7 +89,7 @@ def on_visitor_leaves():
 def on_donation():
     print("They pushed the lid - thank them!")
     voice.say_one_of(config.POST_EATING_TRACKS, important=True)
-    voice.say_one_of(config.THANKS_TRACKS, important=True)
+    voice.then_say_one_of(config.THANKS_TRACKS)     # after the gulp ends
 
 
 def on_bin_full():
