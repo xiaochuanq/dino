@@ -53,8 +53,13 @@ def test_old_device_names_are_gone():
 
 
 def test_motion_knobs():
+    import inspect
+    from visitor import VisitorLogic
+
     assert config.PIR_PIN >= 0
     assert config.PIR_WARMUP_S >= 0
     assert config.MOTION_HOLD_S > 0
     # the gate must outlive the stale window or visitors flicker away
-    assert config.MOTION_HOLD_S * 1000 > 2000
+    stale_default = inspect.signature(
+        VisitorLogic.__init__).parameters["stale_ms"].default
+    assert config.MOTION_HOLD_S * 1000 > stale_default

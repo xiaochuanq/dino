@@ -123,7 +123,9 @@ def test_stopping_moving_fades_to_away_after_hold_plus_stale():
         if v.just_left:
             left_at = t
     assert v.where == AWAY
-    assert left_at == 18 * S            # ~ hold (15 s) + stale (2 s)
+    assert left_at == 18 * S            # hold (15 s) + stale (2 s) + the
+    # extra 1 s comes from this test's 1 s stepping, not the logic; at the
+    # robot's real 50 ms tick the fade lands at ~17.05 s.
 
 
 def test_movement_wakes_the_gate_again():
@@ -156,10 +158,30 @@ def test_visitor_wrapper_reads_its_own_laser_and_pir():
         def motion(self):
             return self.moving
 
-    v = Visitor(FakeLaser(), FakePir(), here_mm=1000, leave_mm=1500,
+    pir = FakePir()
+    v = Visitor(FakeLaser(), pir, here_mm=1000, leave_mm=1500,
                 passing_mm=3000, cooldown_ms=30 * S,
                 motion_hold_ms=15 * S)
     # defaults samples=5, hold_ms=300: feed enough ticks to settle
     for t in range(0, 1000, 50):
+        v.update(t)
+    assert v.where == HERE
+
+    # Now flip the PIR seam off: with nothing warm moving, Visitor.update
+    # must stop trusting the laser, and the visitor fades to AWAY once
+    # motion_hold_ms (15 s) + stale_ms (2 s, the VisitorLogic default) has
+    # passed. If Visitor.update ever hardcoded the moving flag to True,
+    # this half would fail (where would stay HERE forever).
+    pir.moving = False
+    for t in range(1000, 20 * S, 50):
+        v.update(t)
+    assert v.where == AWAY
+
+    # And flip it back on: with motion resuming, the laser is trusted
+    # again and the visitor comes back to HERE. If Visitor.update ever
+    # hardcoded the moving flag to False, this half would fail (where
+    # would stay AWAY forever).
+    pir.moving = True
+    for t in range(20 * S, 21 * S, 50):
         v.update(t)
     assert v.where == HERE

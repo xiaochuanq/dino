@@ -119,5 +119,8 @@ class Visitor(VisitorLogic):
         self._pir = pir
 
     def update(self, now_ms):
+        # motion() is a level, not motion_started(): a visitor already
+        # standing there when the PIR warm-up ends must still count, and
+        # an edge would miss that baseline presence.
         VisitorLogic.update(self, read_mm(self._sensor),
                             self._pir.motion(), now_ms)

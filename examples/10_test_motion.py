@@ -1,8 +1,12 @@
 """Wiring check 10: HC-SR501 PIR motion sensor - after a one-minute
-warm-up, wave your hand: the console shouts MOTION! and the Pico's
-onboard LED lights until the room has been still for ~3 s.
+warm-up, wave your hand: the console shouts MOTION! and the EYES light
+until the room has been still for ~3 s.
 
 Run:  mpremote run examples/10_test_motion.py
+
+This intentionally avoids Pin("LED"). On a Pico W/2 W the onboard LED is
+controlled through CYW43, so a CYW43 timeout can stop an otherwise valid
+PIR test and leave the failure looking like a motion-sensor problem.
 
 WIRING (matches config.py / docs/HARDWARE.md)
     HC-SR501 VCC -> VBUS (pin 40, 5 V), OUT -> GP10, GND -> GND.
@@ -16,7 +20,7 @@ import config
 from droid_motion import Pir
 
 pir = Pir(pin=config.PIR_PIN, warmup_s=config.PIR_WARMUP_S)
-led = Pin("LED", Pin.OUT, value=0)
+led = Pin(config.EYES_PIN, Pin.OUT, value=0)  # eyes light while motion is seen
 
 print("PIR warming up - the sensor needs about a minute to settle.")
 seconds = config.PIR_WARMUP_S
