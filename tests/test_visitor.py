@@ -143,13 +143,13 @@ def test_visitor_wrapper_reads_its_own_laser_and_pir():
     from visitor import Visitor
 
     class FakeLaser:
-        """read_mm() falls back to .read() for objects without an i2c."""
+        """Answers mm(now) like droid_sense.SelfHealingLaser does."""
 
         def __init__(self):
-            self.mm = 800
+            self.value = 800
 
-        def read(self):
-            return self.mm
+        def mm(self, now_ms):
+            return self.value
 
     class FakePir:
         def __init__(self):

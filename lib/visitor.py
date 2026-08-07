@@ -31,8 +31,6 @@ except ImportError:  # desktop CPython for tests
     def ticks_diff(a, b):
         return a - b
 
-from droid_sense import read_mm
-
 AWAY = "away"
 PASSING = "passing"
 HERE = "here"
@@ -116,18 +114,18 @@ class Visitor(VisitorLogic):
     """VisitorLogic plus the real laser and motion sensor: update(now)
     reads them both for you."""
 
-    def __init__(self, sensor, pir, here_mm, leave_mm, passing_mm,
+    def __init__(self, laser, pir, here_mm, leave_mm, passing_mm,
                  cooldown_ms, motion_hold_ms):
         super().__init__(here_mm, leave_mm, passing_mm, cooldown_ms,
                          motion_hold_ms)
-        self._sensor = sensor
+        self._laser = laser      # answers mm(now_ms); heals itself
         self._pir = pir
 
     def update(self, now_ms):
         # motion() is a level, not motion_started(): a visitor already
         # standing there when the PIR warm-up ends must still count, and
         # an edge would miss that baseline presence.
-        VisitorLogic.update(self, read_mm(self._sensor),
+        VisitorLogic.update(self, self._laser.mm(now_ms),
                             self._pir.motion(),
                             now_ms)
 
