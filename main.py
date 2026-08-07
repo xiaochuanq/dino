@@ -33,7 +33,7 @@ import config
 from dysv17f import DYSV17F
 from ir_beam import IRBeam
 from vl53l1x import VL53L1X
-from droid_sense import DeadSensor, set_mode
+from droid_sense import SelfHealingLaser, set_mode
 from droid_motion import Pir
 from visitor import Visitor
 from lid import Lid
@@ -57,12 +57,17 @@ beam = IRBeam(Pin(config.IR_EMIT_PIN, Pin.OUT, value=0),
 lid = Lid(beam, config.LID_PUSH_MAX_MS, config.FULL_AFTER_S * 1000,
           config.COMPLAIN_EVERY_S * 1000, now)
 
-try:
-    laser = VL53L1X(I2C(config.I2C_ID, sda=Pin(config.I2C_SDA_PIN),
-                        scl=Pin(config.I2C_SCL_PIN)))
-    set_mode(laser, config.LASER_MODE)
-except OSError:
-    laser = DeadSensor()   # no laser: lid still works, greetings off
+def build_laser():
+    """Wake the laser and set its range mode. SelfHealingLaser calls
+    this at boot AND again whenever the sensor goes silent too long
+    (power dip, I2C hiccup) - so a flaky laser recovers on its own."""
+    sensor = VL53L1X(I2C(config.I2C_ID, sda=Pin(config.I2C_SDA_PIN),
+                         scl=Pin(config.I2C_SCL_PIN)))
+    set_mode(sensor, config.LASER_MODE)
+    return sensor
+
+
+laser = SelfHealingLaser(build_laser)  # laser gone: greetings pause, lid works
 pir = Pir(pin=config.PIR_PIN, warmup_s=config.PIR_WARMUP_S)
 visitor = Visitor(laser, pir, config.HERE_MM, config.LEAVE_MM,
                   config.PASSING_MM, config.PASSING_COOLDOWN_S * 1000,
