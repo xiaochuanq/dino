@@ -56,7 +56,7 @@ DISTANCE MODES (set_mode)
     bogus 0 mm "close".
 """
 try:
-    from time import ticks_ms, ticks_diff
+    from time import ticks_ms, ticks_diff, ticks_add
 except ImportError:  # desktop CPython for tests
     import time
 
@@ -65,6 +65,9 @@ except ImportError:  # desktop CPython for tests
 
     def ticks_diff(a, b):
         return a - b
+
+    def ticks_add(a, b):
+        return a + b
 
 FAR = "far"
 NEAR = "near"
@@ -177,6 +180,57 @@ def read_mm(sensor):
             i2c.readfrom_mem(sensor.address, 0x0089, 17, addrsize=16))
     except OSError:
         return None
+
+
+class SelfHealingLaser:
+    """Owns the laser through a build-it function and keeps it alive.
+
+    mm(now_ms) -> millimetres, or None for "nothing in range".
+
+    Why: a supply dip (loud speaker, brown-out) resets the VL53L1X into
+    standby, and an I2C glitch can wedge the bus - either way the sensor
+    goes silent until someone re-initializes it. This wrapper rebuilds
+    it after heal_after_ms of unbroken silence, trying at most once per
+    retry_every_ms, so the robot never needs a reboot. An empty room is
+    also "silence", so the occasional needless rebuild is by design -
+    it costs a few milliseconds of register writes.
+    """
+
+    def __init__(self, build, heal_after_ms=10_000, retry_every_ms=10_000):
+        self._build = build          # () -> ranging sensor; may raise
+        self._heal_after = heal_after_ms
+        self._retry_every = retry_every_ms
+        self._sensor = None
+        self._quiet_since = None     # when the current silence started
+        self._next_retry = None      # None = allowed to (re)build now
+
+    def mm(self, now_ms):
+        """One reading. Rebuilds the sensor first if it is missing or
+        has been silent too long; a rebuilt sensor answers next call."""
+        if self._sensor is None:
+            self._rebuild(now_ms)
+            if self._sensor is None:
+                return None
+        value = read_mm(self._sensor)
+        if value is not None:
+            self._quiet_since = None
+            return value
+        if self._quiet_since is None:
+            self._quiet_since = now_ms
+        elif ticks_diff(now_ms, self._quiet_since) >= self._heal_after:
+            self._rebuild(now_ms)
+        return None
+
+    def _rebuild(self, now_ms):
+        if (self._next_retry is not None and
+                ticks_diff(now_ms, self._next_retry) < 0):
+            return                   # tried recently: wait our turn
+        self._next_retry = ticks_add(now_ms, self._retry_every)
+        self._quiet_since = now_ms   # fresh grace period either way
+        try:
+            self._sensor = self._build()
+        except (OSError, RuntimeError, ValueError):
+            self._sensor = None      # still gone; mm() keeps saying None
 
 
 class ZoneFilter:
