@@ -137,3 +137,4 @@ class Pir:
         Latched, so a busy loop cannot miss a short wave."""
         self._poll()
         return self._filter.motion_started()
+

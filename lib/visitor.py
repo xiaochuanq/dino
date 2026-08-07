@@ -61,13 +61,13 @@ class VisitorLogic:
         self.just_passed = False
 
     def update(self, mm, moving, now_ms):
+        """Feed one distance (mm, or None for "nothing in sight") plus
+        one "did anything warm move?" flag from the motion sensor."""
         if moving:
             msg = f"Moving target at {mm} mm at {now_ms}"
         else:
             msg = f"Stable target at {mm} mm at {now_ms}"
         print(msg)
-        """Feed one distance (mm, or None for "nothing in sight") plus
-        one "did anything warm move?" flag from the motion sensor."""
         if moving:
             self._last_motion = now_ms
         if (self._last_motion is None or
@@ -128,5 +128,6 @@ class Visitor(VisitorLogic):
         # standing there when the PIR warm-up ends must still count, and
         # an edge would miss that baseline presence.
         VisitorLogic.update(self, read_mm(self._sensor),
-                            self._pir.motion(), now_ms)
+                            self._pir.motion(),
+                            now_ms)
 
