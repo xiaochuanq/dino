@@ -34,9 +34,10 @@ except ImportError:  # desktop CPython for tests
 
 
 class VoiceLogic:
-    def __init__(self, busy_assert_ms, fallback_ms):
+    def __init__(self, busy_assert_ms, fallback_ms, stuck_ms=30_000):
         self._assert = busy_assert_ms
         self._fallback = fallback_ms
+        self._stuck = stuck_ms   # BUSY high longer than this = lying wire
         self._started = None     # when play() was sent; None = quiet
         self._saw_busy = False
         self.is_talking = False
@@ -54,8 +55,14 @@ class VoiceLogic:
         elif ticks_diff(now_ms, self._started) < self._assert:
             self.is_talking = True       # BUSY can't be trusted yet
         elif busy:
-            self._saw_busy = True
-            self.is_talking = True
+            if ticks_diff(now_ms, self._started) >= self._stuck:
+                # no track is this long: the BUSY wire is stuck (sound
+                # board mis-booted and the strap holds the line high)
+                self._started = None
+                self.is_talking = False
+            else:
+                self._saw_busy = True
+                self.is_talking = True
         elif self._saw_busy:
             self._started = None         # playback finished
             self.is_talking = False

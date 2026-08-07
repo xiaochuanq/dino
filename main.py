@@ -43,6 +43,8 @@ uart = UART(config.UART_ID, baudrate=9600,
             tx=Pin(config.UART_TX_PIN), rx=Pin(config.UART_RX_PIN))
 player = DYSV17F(uart, busy_pin=Pin(config.BUSY_PIN, Pin.IN),
                  busy_active=config.BUSY_ACTIVE)
+time.sleep_ms(2000)   # cold power-up (wall charger): the sound board
+                      # boots slower than the Pico - don't talk to it yet
 player.set_volume(config.VOLUME)
 voice = Voice(player, config.BUSY_ASSERT_MS, config.TALK_FALLBACK_MS)
 

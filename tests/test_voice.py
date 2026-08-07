@@ -128,3 +128,22 @@ def test_interruption_forgets_the_waiting_line():
     v.update(ticks_ms())
     assert p.played == [7, 5]           # 9 belonged to the old event: gone
     assert v.is_talking is False
+
+
+def test_stuck_busy_wire_gives_up_eventually():
+    # BUSY held high forever (sound board mis-booted, strap holds the
+    # line): stop believing it after stuck_ms so the eyes stop lying.
+    v = VoiceLogic(busy_assert_ms=300, fallback_ms=3000, stuck_ms=30_000)
+    v.started(0)
+    assert v.update(True, 10_000) is True
+    assert v.update(True, 29_000) is True
+    assert v.update(True, 30_000) is False   # the wire is lying: quiet
+    assert v.update(True, 31_000) is False   # and it stays quiet
+
+
+def test_long_real_playback_under_the_limit_still_ends_normally():
+    v = VoiceLogic(busy_assert_ms=300, fallback_ms=3000, stuck_ms=30_000)
+    v.started(0)
+    v.update(True, 400)
+    assert v.update(True, 29_999) is True    # long track, still believed
+    assert v.update(False, 30_500) is False  # normal BUSY release works
