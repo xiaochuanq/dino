@@ -30,6 +30,7 @@ there when that project updates them (last synced 2026-08-04).
 | GP4 | `EYES_PIN` | Both eye LEDs, in parallel, switched together by this one pin |
 | GP5 | `IR_EMIT_PIN` | IR emitter output (briefly pulsed for each receiver sample) |
 | GP6, GP7, GP8 | `IR_RECV_PINS` | Three IR receiver inputs (`IR_BEAM_SEEN_VALUE = 0`); the beam counts as "seen" only when every receiver agrees |
+| GP10 | `PIR_PIN` | HC-SR501 PIR OUT input (no internal pull) |
 | GP14 | `I2C_SDA_PIN` | I2C1 SDA → VL53L1X SDA |
 | GP15 | `I2C_SCL_PIN` | I2C1 SCL → VL53L1X SCL |
 
@@ -51,6 +52,7 @@ timeout would stop the sensor test.
 | GP4 | Eye LED anodes (×2) | Two LEDs in parallel, **each with its own series resistor** (e.g. 220 Ω) → cathodes → GND. Two standard LEDs ≈ 2×10 mA is at the edge of one GPIO's comfort; use ≥ 330 Ω resistors or an NPN driver if you want them bright. |
 | GP5 | IR emitter LED anode | **220 Ω** series resistor → cathode → GND (Vf ≈ 1.3 V → ~9 mA; never below 150 Ω, never resistor-less) |
 | GP6, GP7, GP8 | IR receiver OUT (×3) | Bare phototransistors: collector → GP6/GP7/GP8, emitter → GND. The code enables each pin's internal pull-up; an external **10 kΩ pull-up to 3V3** per receiver gives a stronger, more predictable signal. A simple comparator break-beam module may use VCC → 3V3, GND → GND, OUT → the GPIO. |
+| GP10 | HC-SR501 OUT | Push-pull 3.3 V output from the module - no pulls, no series resistor. VCC → VBUS (5 V), GND → GND. Jumper on H (repeat trigger), time-delay pot fully counter-clockwise (~3 s). Needs ~60 s warm-up after power-on; keep it away from the Pico W antenna and speaker wires. |
 | GP14 / GP15 | VL53L1X SDA / SCL | VIN → 3V3 (pin 36), GND → GND. Every common breakout (Pololu, Adafruit, GY-53) has ~10 kΩ I2C pull-ups on board — add nothing. For a bare module or a bus over ~20 cm, add 4.7–10 kΩ from SDA→3V3 and SCL→3V3. Sensor fails at boot → greeting/passing/goodbye go quiet, lid features keep working. |
 | 3V3 / GND | Sensor power | IR receiver parts, VL53L1X |
 

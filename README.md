@@ -4,6 +4,8 @@ A MicroPython robot for a Raspberry Pi Pico 2 / 2 W on a donation bin.
 Dino watches with a laser tape-measure and an invisible IR light beam:
 
 - Someone walks by (1–3 m) → a random funny noise (then a cooldown).
+- Only *moving* people count: a parked bag or stroller stops mattering
+  about 17 s after it stops moving (motion gate).
 - Someone comes close (< 1 m) → a random greeting, once per visit.
 - They walk away (> 1.5 m) → a random goodbye.
 - They push the lid flap while standing close → a random thank-you.
@@ -32,6 +34,7 @@ loop with three steps every tick:
 | GP4 | Both eye LEDs in parallel, each through its own resistor → GND |
 | GP5 | IR emitter LED (+ 220 Ω resistor) |
 | GP6, GP7, GP8 | IR receiver outputs |
+| GP10 | HC-SR501 PIR OUT (motion sensor; VCC → VBUS 5 V) |
 | GP14 / GP15 | VL53L1X SDA / SCL (I2C1) |
 | VBUS (5 V) / GND | DY-SV17F power (UART is 3.3 V-safe) |
 | 3V3 / GND | VL53L1X power |
@@ -67,6 +70,7 @@ interrupt whatever is playing. Passing noises and complaints are
 | `LEAVE_MM` | farther than this = they left (hysteresis gap) | 1500 |
 | `PASSING_MM` | outer edge of the walking-by band | 3000 |
 | `PASSING_COOLDOWN_S` | quiet time between passing noises | 30 |
+| `MOTION_HOLD_S` | believe the laser this long after the last movement | 15 |
 | `LID_PUSH_MAX_MS` | lid open shorter than this = a push | 2000 |
 | `FULL_AFTER_S` | lid open this long = FULL | 60 |
 | `COMPLAIN_EVERY_S` | seconds between complaints while FULL | 10 |
@@ -82,6 +86,11 @@ If the beam reads backwards, flip `IR_BEAM_SEEN_VALUE`.
 mpremote repl      # watch it run (Ctrl-D to soft-reboot)
 ```
 
+Give it a minute: the PIR motion sensor needs ~60 s to warm up after
+power-on, so the greeter (passing noises, greetings, goodbyes) stays
+quiet until then, even though lid behaviors (pushes, thank-yous, FULL
+complaints) work immediately.
+
 If a Pico was deployed before this rewrite, remove the retired module
 once: `mpremote rm :lib/bin_watch.py`
 
@@ -91,6 +100,7 @@ once: `mpremote rm :lib/bin_watch.py`
 mpremote run examples/02_test_ir.py       # IR beam (prints state)
 mpremote run examples/03_test_sound.py    # sound + LEDs
 mpremote run examples/09_test_laser.py    # laser distance sensor
+mpremote run examples/10_test_motion.py   # PIR motion sensor
 ```
 
 ## Desktop tests (no hardware needed)
