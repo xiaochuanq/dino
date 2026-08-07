@@ -6,11 +6,13 @@ Change a number, save, redeploy (./deploy.sh) - that's how you tune the robot.
 # --- Sounds: track numbers = file names on the DY-SV17F flash -----------
 # 00003.wav on the module is track 3. Add a file, add its number to a list,
 # and Dino picks one of the list at random every time.
-PASSING_TRACKS = [3]       # funny noise when someone walks by (1-3 m)
-GREETING_TRACKS = [1]      # "hello!" when someone comes close
-GOODBYE_TRACKS = [4]       # "bye!" when they walk away
-THANKS_TRACKS = [5]        # "thank you!" when they push the lid
-FULL_TRACKS = [2]          # complaints while the bin is stuffed full
+PASSING_TRACKS = list(range(34,38)) #[34 ... 37]       # funny noise when someone walks by (1-3 m)
+GREETING_TRACKS = list(range(1, 8))   #[1...7] # "hello!" when someone comes close
+ASK_HELP_TRACKS = list(range(8,12)) #[8...11]
+POST_EATING_TRACKS = [12,13]  # Noise of swollow, burp etc.
+THANKS_TRACKS = list(range(14,22)) # Post donation thanks
+GOODBYE_TRACKS = list(range(22,27))   # "bye!" when they walk away
+CHOKE_TRACKS = list(range(29,34)) #[29 ...33]   # "thank you!" when they push the lid
 VOLUME = 30                # 0-30
 
 # --- Distances (millimetres) ---------------------------------------------
@@ -25,9 +27,9 @@ LASER_MODE = "medium"      # "short" ~1.3 m / "medium" ~2.9 m / "long" ~3.6 m
 # --- Behavior timing ------------------------------------------------------
 PASSING_COOLDOWN_S = 30    # quiet time between two passing noises
 MOTION_HOLD_S = 15         # believe the laser this long after the last movement
-PIR_WARMUP_S = 60          # PIR settle time after power-on (physics, not a bug)
+PIR_WARMUP_S = 30          # PIR settle time after power-on (physics, not a bug)
 LID_PUSH_MAX_MS = 2000     # lid open shorter than this, then shut = a push
-FULL_AFTER_S = 60          # lid open this many seconds -> bin is FULL
+FULL_AFTER_S = 30          # lid open this many seconds -> bin is FULL
 COMPLAIN_EVERY_S = 10      # seconds between complaints while FULL
 TALK_BLINK_MS = 250        # eye blink speed while Dino is talking
 
@@ -53,3 +55,4 @@ IR_SAMPLE_GAP_US = 200     # gap between the receiver reads
 BUSY_ASSERT_MS = 300       # after play(), BUSY can't be trusted this long
 TALK_FALLBACK_MS = 3000    # assumed talk time if BUSY never asserts
 TICK_MS = 50               # main loop tick
+

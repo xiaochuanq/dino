@@ -73,28 +73,29 @@ eyes = Eyes(Pin(config.EYES_PIN, Pin.OUT, value=1), config.TALK_BLINK_MS)
 
 # --- ACT: what Dino does. Kids, edit these! ------------------------------
 def on_visitor_passing():
-    """Someone walks by, 1-3 m away."""
+    print("Someone walks by, 1-3 m away.")
     voice.say_one_of(config.PASSING_TRACKS)
 
 
 def on_visitor_arrives():
-    """Someone comes close - say hello!"""
+    print("Someone comes close - say hello!")
     voice.say_one_of(config.GREETING_TRACKS, important=True)
-
+    voice.say_one_of(config.ASK_HELP_TRACKS, important=True)
 
 def on_visitor_leaves():
-    """They walk away - say goodbye!"""
+    print("They walk away - say goodbye!")
     voice.say_one_of(config.GOODBYE_TRACKS, important=True)
 
 
 def on_donation():
-    """They pushed the lid - thank them!"""
+    print("They pushed the lid - thank them!")
+    voice.say_one_of(config.POST_EATING_TRACKS, important=True)
     voice.say_one_of(config.THANKS_TRACKS, important=True)
 
 
 def on_bin_full():
-    """The lid is stuck open - Dino is stuffed. Complain!"""
-    voice.say_one_of(config.FULL_TRACKS)
+    print("The lid is stuck open - Dino is stuffed. Complain!")
+    voice.say_one_of(config.CHOKE_TRACKS)
 
 
 # --- the loop: SENSE -> DECIDE -> ACT ------------------------------------
@@ -122,4 +123,6 @@ while True:
     eyes.update(now, voice.is_talking)
 
     time.sleep_ms(config.TICK_MS)
+
+
 
