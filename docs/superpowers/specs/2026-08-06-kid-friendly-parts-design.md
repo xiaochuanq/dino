@@ -144,8 +144,10 @@ start time. Eyes: none.
 ## Error handling
 
 - Laser missing/dead at boot or mid-run → `Visitor` reads as `"away"`:
-  greeting/passing/goodbye go quiet, the lid behaviors still work
-  (`DeadSensor` + stale-reading fallback, both existing patterns).
+  greeting/passing/goodbye go quiet, and lid pushes are no longer
+  thanked either (a donation needs `visitor.where == "here"`); only
+  the full-bin complaint keeps working (`DeadSensor` + stale-reading
+  fallback, both existing patterns).
 - Sound module missing → BUSY never asserts; `VoiceLogic`'s fixed-time
   fallback keeps the state machine from wedging.
 

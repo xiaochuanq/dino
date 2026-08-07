@@ -5,7 +5,7 @@ reports how far away the nearest person is, in millimetres. VisitorLogic
 (pure logic, desktop-testable) turns those raw distances into one simple
 answer - where is the visitor? - plus one-tick news flags:
 
-    where         "away" (or nobody), "passing" (walking by, 1.5-3 m),
+    where         "away" (or nobody), "passing" (walking by, 1-3 m),
                   or "here" (close enough to talk to, under 1 m)
     just_arrived  (one tick) they came close - greet them!
     just_left     (one tick) they walked away - say goodbye!

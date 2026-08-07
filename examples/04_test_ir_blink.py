@@ -23,7 +23,7 @@ import config
 from ir_beam import IRBeam
 
 ir_emit = Pin(config.IR_EMIT_PIN, Pin.OUT, value=0)
-ir_recv = Pin(config.IR_RECV_PINS[0], Pin.IN, pull=Pin.PULL_UP)
+ir_recv = [Pin(config.IR_RECV_PINS[0], Pin.IN, pull=Pin.PULL_UP)]
 ir_beam = IRBeam(ir_emit, ir_recv, config.IR_BEAM_SEEN_VALUE,
                  config.IR_SETTLE_MS, config.IR_SAMPLE_COUNT,
                  config.IR_SAMPLE_GAP_US)

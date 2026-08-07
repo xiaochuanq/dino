@@ -3,7 +3,7 @@
 A MicroPython robot for a Raspberry Pi Pico 2 / 2 W on a donation bin.
 Dino watches with a laser tape-measure and an invisible IR light beam:
 
-- Someone walks by (1.5–3 m) → a random funny noise (then a cooldown).
+- Someone walks by (1–3 m) → a random funny noise (then a cooldown).
 - Someone comes close (< 1 m) → a random greeting, once per visit.
 - They walk away (> 1.5 m) → a random goodbye.
 - They push the lid flap while standing close → a random thank-you.

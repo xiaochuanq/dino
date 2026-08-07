@@ -51,7 +51,7 @@ beam = IRBeam(Pin(config.IR_EMIT_PIN, Pin.OUT, value=0),
               config.IR_BEAM_SEEN_VALUE, config.IR_SETTLE_MS,
               config.IR_SAMPLE_COUNT, config.IR_SAMPLE_GAP_US)
 lid = Lid(beam, config.LID_PUSH_MAX_MS, config.FULL_AFTER_S * 1000,
-            config.COMPLAIN_EVERY_S * 1000, now)
+          config.COMPLAIN_EVERY_S * 1000, now)
 
 try:
     laser = VL53L1X(I2C(config.I2C_ID, sda=Pin(config.I2C_SDA_PIN),
@@ -67,7 +67,7 @@ eyes = Eyes(Pin(config.EYES_PIN, Pin.OUT, value=1), config.TALK_BLINK_MS)
 
 # --- ACT: what Dino does. Kids, edit these! ------------------------------
 def on_visitor_passing():
-    """Someone walks by, 1.5-3 m away."""
+    """Someone walks by, 1-3 m away."""
     voice.say_one_of(config.PASSING_TRACKS)
 
 
