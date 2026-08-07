@@ -46,7 +46,15 @@ def test_ir_receiver_pins_listed():
 
 
 def test_old_device_names_are_gone():
-    for name in ("PIR_PIN", "LED_PINS", "TRACK_PASS_VOICE", "TRACK_BEEP",
+    for name in ("LED_PINS", "TRACK_PASS_VOICE", "TRACK_BEEP",
                  "GREET_NEAR_MM", "FLASH_COUNT", "ALERT_REPEAT_S",
                  "IR_PASS_MAX_MS", "LED_FALLBACK_ON_MS"):
         assert not hasattr(config, name)
+
+
+def test_motion_knobs():
+    assert config.PIR_PIN >= 0
+    assert config.PIR_WARMUP_S >= 0
+    assert config.MOTION_HOLD_S > 0
+    # the gate must outlive the stale window or visitors flicker away
+    assert config.MOTION_HOLD_S * 1000 > 2000

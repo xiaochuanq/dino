@@ -24,6 +24,8 @@ LASER_MODE = "medium"      # "short" ~1.3 m / "medium" ~2.9 m / "long" ~3.6 m
 
 # --- Behavior timing ------------------------------------------------------
 PASSING_COOLDOWN_S = 30    # quiet time between two passing noises
+MOTION_HOLD_S = 15         # believe the laser this long after the last movement
+PIR_WARMUP_S = 60          # PIR settle time after power-on (physics, not a bug)
 LID_PUSH_MAX_MS = 2000     # lid open shorter than this, then shut = a push
 FULL_AFTER_S = 60          # lid open this many seconds -> bin is FULL
 COMPLAIN_EVERY_S = 10      # seconds between complaints while FULL
@@ -37,6 +39,7 @@ BUSY_PIN = 2               # DY-SV17F BUSY output (CON3 pin)
 EYES_PIN = 4               # both eye LEDs (in parallel), one GPIO
 IR_EMIT_PIN = 5            # IR emitter LED (through 220 ohm)
 IR_RECV_PINS = [6, 7, 8]   # IR receiver outputs
+PIR_PIN = 10               # HC-SR501 PIR OUT (motion sensor)
 I2C_ID = 1                 # GP14/15 belong to I2C1 on the Pico
 I2C_SDA_PIN = 14           # VL53L1X SDA
 I2C_SCL_PIN = 15           # VL53L1X SCL
