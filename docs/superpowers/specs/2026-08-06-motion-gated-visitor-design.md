@@ -1,5 +1,11 @@
 # Motion-gated visitor — HC-SR501 PIR returns as a believe-the-laser gate
 
+> **SUPERSEDED 2026-08-07.** The PIR was removed again: its hardware
+> limits (~3 s re-trigger block time, near-blindness to head-on
+> approach, 30-60 s warm-up) made detection too slow for the goal of
+> reacting to a visitor immediately. The visitor is laser-only again;
+> the code lives in git history (and pico-droid) if it's ever wanted.
+
 Design agreed 2026-08-06, follow-up to the kid-friendly parts rewrite
 (`2026-08-06-kid-friendly-parts-design.md`).
 

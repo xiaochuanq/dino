@@ -49,18 +49,8 @@ def test_ir_receiver_pins_listed():
 def test_old_device_names_are_gone():
     for name in ("LED_PINS", "TRACK_PASS_VOICE", "TRACK_BEEP",
                  "GREET_NEAR_MM", "FLASH_COUNT", "ALERT_REPEAT_S",
-                 "IR_PASS_MAX_MS", "LED_FALLBACK_ON_MS"):
+                 "IR_PASS_MAX_MS", "LED_FALLBACK_ON_MS",
+                 "PIR_PIN", "PIR_WARMUP_S", "MOTION_HOLD_S"):
         assert not hasattr(config, name)
 
 
-def test_motion_knobs():
-    import inspect
-    from visitor import VisitorLogic
-
-    assert config.PIR_PIN >= 0
-    assert config.PIR_WARMUP_S >= 0
-    assert config.MOTION_HOLD_S > 0
-    # the gate must outlive the stale window or visitors flicker away
-    stale_default = inspect.signature(
-        VisitorLogic.__init__).parameters["stale_ms"].default
-    assert config.MOTION_HOLD_S * 1000 > stale_default

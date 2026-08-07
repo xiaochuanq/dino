@@ -17,12 +17,6 @@ ignores one wild reading; a zone change must hold for hold_ms before it
 counts; "here" only ends past leave_mm (farther than here_mm), so a
 visitor hovering at the boundary is not greeted twice; readings of None
 (nothing in sight / sensor unplugged) fade to "away" after stale_ms.
-
-The motion gate: Dino only believes the laser when something warm has
-moved within motion_hold_ms (the HC-SR501 PIR supplies the `moving`
-flag). With no recent movement, readings are treated as "nothing in
-sight" - so a parked bag fades to "away" instead of being greeted over
-and over, and anything it triggered self-heals.
 """
 try:
     from time import ticks_diff
@@ -38,12 +32,11 @@ HERE = "here"
 
 class VisitorLogic:
     def __init__(self, here_mm, leave_mm, passing_mm, cooldown_ms,
-                 motion_hold_ms, samples=5, hold_ms=300, stale_ms=2000):
+                 samples=5, hold_ms=300, stale_ms=2000):
         self._here = here_mm
         self._leave = leave_mm
         self._passing = passing_mm
         self._cooldown = cooldown_ms
-        self._motion_hold = motion_hold_ms
         self._samples = samples
         self._hold = hold_ms
         self._stale = stale_ms
@@ -51,26 +44,14 @@ class VisitorLogic:
         self._cand = AWAY
         self._cand_since = 0
         self._last_good = 0
-        self._last_motion = None
         self._last_noise = None
         self.where = AWAY
         self.just_arrived = False
         self.just_left = False
         self.just_passed = False
 
-    def update(self, mm, moving, now_ms):
-        """Feed one distance (mm, or None for "nothing in sight") plus
-        one "did anything warm move?" flag from the motion sensor."""
-        if moving:
-            msg = f"Moving target at {mm} mm at {now_ms}"
-        else:
-            msg = f"Stable target at {mm} mm at {now_ms}"
-        print(msg)
-        if moving:
-            self._last_motion = now_ms
-        if (self._last_motion is None or
-                ticks_diff(now_ms, self._last_motion) > self._motion_hold):
-            mm = None   # nothing warm moved lately: don't believe the laser
+    def update(self, mm, now_ms):
+        """Feed one distance (mm, or None for "nothing in sight")."""
         was = self.where
         self.just_arrived = self.just_left = self.just_passed = False
         if mm is None:
@@ -111,21 +92,12 @@ class VisitorLogic:
 
 
 class Visitor(VisitorLogic):
-    """VisitorLogic plus the real laser and motion sensor: update(now)
-    reads them both for you."""
+    """VisitorLogic plus the real laser: update(now) reads it for you."""
 
-    def __init__(self, laser, pir, here_mm, leave_mm, passing_mm,
-                 cooldown_ms, motion_hold_ms):
-        super().__init__(here_mm, leave_mm, passing_mm, cooldown_ms,
-                         motion_hold_ms)
+    def __init__(self, laser, here_mm, leave_mm, passing_mm, cooldown_ms):
+        super().__init__(here_mm, leave_mm, passing_mm, cooldown_ms)
         self._laser = laser      # answers mm(now_ms); heals itself
-        self._pir = pir
 
     def update(self, now_ms):
-        # motion() is a level, not motion_started(): a visitor already
-        # standing there when the PIR warm-up ends must still count, and
-        # an edge would miss that baseline presence.
-        VisitorLogic.update(self, self._laser.mm(now_ms),
-                            self._pir.motion(),
-                            now_ms)
+        VisitorLogic.update(self, self._laser.mm(now_ms), now_ms)
 

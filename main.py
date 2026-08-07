@@ -7,8 +7,7 @@ HOW DINO THINKS - the loop at the bottom, three steps every tick:
 
 DINO'S BODY PARTS (built in the hardware section - the only place
 device names appear):
-  visitor - a laser tape-measure plus a motion sensor: is someone
-            away / passing / here? (only MOVING things count)
+  visitor - a laser tape-measure: is someone away / passing / here?
   lid    - an IR light beam across the flap: open? pushed? stuck-open full?
   voice   - a sound board: speaks random lines, knows if it's talking
   eyes    - two LEDs: steady glow, lively blink while talking
@@ -23,8 +22,6 @@ WIRING (GP numbers; tuning knobs in config.py)
     IR beam    emitter: GP5 --[220 ohm]--> anode, cathode -> GND
                receivers: -> GP6, GP7, GP8 (internal pull-ups)
     VL53L1X    VIN -> 3V3, GND -> GND, SDA -> GP14, SCL -> GP15 (I2C1)
-    HC-SR501   VCC -> VBUS (5 V), OUT -> GP10, GND -> GND
-               (jumper on H, time-delay pot ~3 s; needs ~60 s warm-up)
 """
 import time
 from machine import Pin, UART, I2C
@@ -34,7 +31,6 @@ from dysv17f import DYSV17F
 from ir_beam import IRBeam
 from vl53l1x import VL53L1X
 from droid_sense import SelfHealingLaser, set_mode
-from droid_motion import Pir
 from visitor import Visitor
 from lid import Lid
 from voice import Voice
@@ -68,10 +64,8 @@ def build_laser():
 
 
 laser = SelfHealingLaser(build_laser)  # laser gone: greetings pause, lid works
-pir = Pir(pin=config.PIR_PIN, warmup_s=config.PIR_WARMUP_S)
-visitor = Visitor(laser, pir, config.HERE_MM, config.LEAVE_MM,
-                  config.PASSING_MM, config.PASSING_COOLDOWN_S * 1000,
-                  config.MOTION_HOLD_S * 1000)
+visitor = Visitor(laser, config.HERE_MM, config.LEAVE_MM,
+                  config.PASSING_MM, config.PASSING_COOLDOWN_S * 1000)
 
 eyes = Eyes(Pin(config.EYES_PIN, Pin.OUT, value=1), config.TALK_BLINK_MS)
 
